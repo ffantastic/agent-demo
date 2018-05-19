@@ -28,6 +28,8 @@ public class HelloController {
     private Object lock = new Object();
     private OkHttpClient httpClient = new OkHttpClient();
 
+    private LocalLoadBalancer lb = LocalLoadBalancer.GetInstance();
+
 
     @RequestMapping(value = "")
     public Object invoke(@RequestParam("interface") String interfaceName,
@@ -57,14 +59,21 @@ public class HelloController {
             synchronized (lock){
                 if (null == endpoints){
                     endpoints = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService");
+                    for (Endpoint ep : endpoints){
+                        System.out.println("[LB] add host: "+ep.getHost()+":"+ep.getPort());
+                        this.lb.UpdateTTR(ep.getHost()+":"+ep.getPort(),0);
+                    }
                 }
             }
         }
 
-        // 简单的负载均衡，随机取一个
-        Endpoint endpoint = endpoints.get(random.nextInt(endpoints.size()));
+        System.out.println("Endpoint size: "+endpoints.size());
 
-        String url =  "http://" + endpoint.getHost() + ":" + endpoint.getPort();
+        // 简单的负载均衡，随机取一个
+        final String endpointStr = this.lb.GetHost();
+         String[] hostAndPort = endpointStr.split(":");
+
+        String url =  "http://" + hostAndPort[0] + ":" + hostAndPort[1];
 
         RequestBody requestBody = new FormBody.Builder()
                 .add("interface",interfaceName)
@@ -78,10 +87,13 @@ public class HelloController {
                 .post(requestBody)
                 .build();
 
+        final long requestStartTime = System.currentTimeMillis();
         try (Response response = httpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
             byte[] bytes = response.body().bytes();
             String s = new String(bytes);
+            this.lb.UpdateTTR(endpointStr,System.currentTimeMillis()-requestStartTime);
+
             return Integer.valueOf(s);
         }
     }
