@@ -60,14 +60,14 @@ public class HelloController {
                 if (null == endpoints){
                     endpoints = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService");
                     for (Endpoint ep : endpoints){
-                        System.out.println("[LB] add host: "+ep.getHost()+":"+ep.getPort());
+                        logger.info("[LB] add host: "+ep.getHost()+":"+ep.getPort());
                         this.lb.UpdateTTR(ep.getHost()+":"+ep.getPort(),0);
                     }
                 }
             }
         }
 
-        System.out.println("Endpoint size: "+endpoints.size());
+        logger.info("Endpoint size: "+endpoints.size());
 
         // 简单的负载均衡，随机取一个
         final String endpointStr = this.lb.GetHost();

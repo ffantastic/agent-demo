@@ -33,6 +33,7 @@ public class LocalLoadBalancer {
     public void UpdateTTR(String key,long ttInMS){
             ThroughTimeRecord record = ttrMap.get(key);
             if(record == null){
+                record = new ThroughTimeRecord();
                 ttrMap.put(key,record);
 
                 // this operation is not frequent
