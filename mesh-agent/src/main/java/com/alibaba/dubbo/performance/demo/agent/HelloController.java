@@ -67,7 +67,7 @@ public class HelloController {
             }
         }
 
-        logger.info("Endpoint size: "+endpoints.size());
+        //logger.info("Endpoint size: "+endpoints.size());
 
         // 简单的负载均衡，随机取一个
         final String endpointStr = this.lb.GetHost();

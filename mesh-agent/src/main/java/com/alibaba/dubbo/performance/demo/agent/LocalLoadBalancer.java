@@ -1,11 +1,15 @@
 package com.alibaba.dubbo.performance.demo.agent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LocalLoadBalancer {
+    private Logger logger = LoggerFactory.getLogger(LocalLoadBalancer.class);
     private static LocalLoadBalancer holder=null;
     private static Object lock=new Object();
     private ConcurrentHashMap<String,ThroughTimeRecord> ttrMap;
@@ -53,10 +57,11 @@ public class LocalLoadBalancer {
         String key_secMinTT =keys.get(0);
         long minTT = ttrMap.get(key_minTT).GetAverageThroughtTime();
         long secMinTT = ttrMap.get(key_secMinTT).GetAverageThroughtTime();
-
+        StringBuilder debug = new StringBuilder(key_minTT+":"+key_minTT);
         for(int i=1;i<keys.size();i++){
             String key = keys.get(i);
             long tt =  ttrMap.get(key).GetAverageThroughtTime();
+            debug.append(","+key+":"+tt);
             if(tt<minTT){
                 minTT = tt;
                 key_minTT = key;
@@ -67,14 +72,16 @@ public class LocalLoadBalancer {
         }
 
         if(key_minTT == key_secMinTT){
+            debug.append(", win:"+key_minTT);
             return key_minTT;
         }
 
         // p = 0.8 to use host with min through time;
         if(random.nextInt(10)<=8){
+            debug.append(", win:"+key_minTT);
             return key_minTT;
         }
-
+        debug.append(", win:"+key_secMinTT);
         return key_secMinTT;
     }
 }
