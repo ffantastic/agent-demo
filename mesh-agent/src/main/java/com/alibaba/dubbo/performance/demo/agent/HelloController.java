@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
 public class HelloController {
@@ -29,7 +30,7 @@ public class HelloController {
     private OkHttpClient httpClient = new OkHttpClient();
 
     private LocalLoadBalancer lb = LocalLoadBalancer.GetInstance();
-
+    private AtomicLong endPointMonitorCount = new AtomicLong(0);
 
     @RequestMapping(value = "")
     public Object invoke(@RequestParam("interface") String interfaceName,
@@ -66,7 +67,14 @@ public class HelloController {
                 }
             }
         }
-
+        if(endPointMonitorCount.getAndIncrement() == 1000){
+                List<Endpoint> eps= registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService");
+            for (Endpoint ep : eps){
+                logger.info("[LB] monitor host: "+ep.getHost()+":"+ep.getPort());
+            }
+            endPointMonitorCount.set(0);
+        }
+        
         //logger.info("Endpoint size: "+endpoints.size());
 
         // 简单的负载均衡，随机取一个

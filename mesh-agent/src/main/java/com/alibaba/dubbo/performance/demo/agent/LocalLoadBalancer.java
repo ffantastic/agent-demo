@@ -73,15 +73,18 @@ public class LocalLoadBalancer {
 
         if(key_minTT == key_secMinTT){
             debug.append(", win:"+key_minTT);
+            logger.info(debug.toString());
             return key_minTT;
         }
 
         // p = 0.8 to use host with min through time;
         if(random.nextInt(10)<=8){
             debug.append(", win:"+key_minTT);
+            logger.info(debug.toString());
             return key_minTT;
         }
         debug.append(", win:"+key_secMinTT);
+        logger.info(debug.toString());
         return key_secMinTT;
     }
 }
