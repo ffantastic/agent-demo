@@ -11,26 +11,43 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
 public class HelloController {
 
     private Logger logger = LoggerFactory.getLogger(HelloController.class);
-    
+
     private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));
 
     private RpcClient rpcClient = new RpcClient(registry);
     private Random random = new Random();
     private List<Endpoint> endpoints = null;
     private Object lock = new Object();
-    private OkHttpClient httpClient = new OkHttpClient();
+    private OkHttpClient httpClient;
 
     private LocalLoadBalancer lb = LocalLoadBalancer.GetInstance();
-    private AtomicLong endPointMonitorCount = new AtomicLong(0);
+
+    @PostConstruct
+    public void init() {
+        logger.info("PostConstruct: initial http connection pool");
+        // 使用100个连接，默认是5个。
+        // okhttp使用http 1.1，默认打开keep-alive
+        ConnectionPool pool = new ConnectionPool(100, 5L, TimeUnit.MINUTES);
+
+        httpClient = new OkHttpClient.Builder()
+                .connectionPool(pool)
+                .connectTimeout(60, TimeUnit.SECONDS)       //设置连接超时
+                .readTimeout(60, TimeUnit.SECONDS)          //不考虑超时
+                .writeTimeout(60, TimeUnit.SECONDS)          //不考虑超时
+                .retryOnConnectionFailure(true)
+                .build();
+    }
 
     @RequestMapping(value = "")
     public Object invoke(@RequestParam("interface") String interfaceName,
@@ -38,56 +55,48 @@ public class HelloController {
                          @RequestParam("parameterTypesString") String parameterTypesString,
                          @RequestParam("parameter") String parameter) throws Exception {
         String type = System.getProperty("type");   // 获取type参数
-        if ("consumer".equals(type)){
-            return consumer(interfaceName,method,parameterTypesString,parameter);
-        }
-        else if ("provider".equals(type)){
-            return provider(interfaceName,method,parameterTypesString,parameter);
-        }else {
+        if ("consumer".equals(type)) {
+            return consumer(interfaceName, method, parameterTypesString, parameter);
+        } else if ("provider".equals(type)) {
+            return provider(interfaceName, method, parameterTypesString, parameter);
+        } else {
             return "Environment variable type is needed to set to provider or consumer.";
         }
     }
 
-    public byte[] provider(String interfaceName,String method,String parameterTypesString,String parameter) throws Exception {
+    public byte[] provider(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
 
-        Object result = rpcClient.invoke(interfaceName,method,parameterTypesString,parameter);
+        Object result = rpcClient.invoke(interfaceName, method, parameterTypesString, parameter);
         return (byte[]) result;
     }
 
-    public Integer consumer(String interfaceName,String method,String parameterTypesString,String parameter) throws Exception {
+    public Integer consumer(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
 
-        if (null == endpoints){
-            synchronized (lock){
-                if (null == endpoints){
+        if (null == endpoints) {
+            synchronized (lock) {
+                if (null == endpoints) {
                     endpoints = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService");
-                    for (Endpoint ep : endpoints){
-                        logger.info("[LB] add host: "+ep.getHost()+":"+ep.getPort());
-                        this.lb.UpdateTTR(ep.getHost()+":"+ep.getPort(),0);
+                    for (Endpoint ep : endpoints) {
+                        logger.info("[LB] add host: " + ep.getHost() + ":" + ep.getPort());
+                        this.lb.UpdateTTR(ep.getHost() + ":" + ep.getPort(), 0);
                     }
                 }
             }
         }
-        if(endPointMonitorCount.getAndIncrement() == 1000){
-                List<Endpoint> eps= registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService");
-            for (Endpoint ep : eps){
-                logger.info("[LB] monitor host: "+ep.getHost()+":"+ep.getPort());
-            }
-            endPointMonitorCount.set(0);
-        }
-        
+
         //logger.info("Endpoint size: "+endpoints.size());
 
         // 简单的负载均衡，随机取一个
         final String endpointStr = this.lb.GetHost();
-         String[] hostAndPort = endpointStr.split(":");
+        String[] hostAndPort = endpointStr.split(":");
 
-        String url =  "http://" + hostAndPort[0] + ":" + hostAndPort[1];
+        String url = "http://" + hostAndPort[0] + ":" + hostAndPort[1];
 
         RequestBody requestBody = new FormBody.Builder()
-                .add("interface",interfaceName)
-                .add("method",method)
-                .add("parameterTypesString",parameterTypesString)
-                .add("parameter",parameter)
+                .add("interface", interfaceName)
+                .add("method", method)
+                .add("parameterTypesString", parameterTypesString)
+                .add("parameter", parameter)
                 .build();
 
         Request request = new Request.Builder()
@@ -100,7 +109,7 @@ public class HelloController {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
             byte[] bytes = response.body().bytes();
             String s = new String(bytes);
-            this.lb.UpdateTTR(endpointStr,System.currentTimeMillis()-requestStartTime);
+            this.lb.UpdateTTR(endpointStr, System.currentTimeMillis() - requestStartTime);
 
             return Integer.valueOf(s);
         }

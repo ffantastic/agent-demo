@@ -57,7 +57,7 @@ public class LocalLoadBalancer {
         String key_secMinTT =keys.get(0);
         long minTT = ttrMap.get(key_minTT).GetAverageThroughtTime();
         long secMinTT = ttrMap.get(key_secMinTT).GetAverageThroughtTime();
-        StringBuilder debug = new StringBuilder(key_minTT+":"+key_minTT);
+        StringBuilder debug = new StringBuilder(key_minTT+":"+minTT);
         for(int i=1;i<keys.size();i++){
             String key = keys.get(i);
             long tt =  ttrMap.get(key).GetAverageThroughtTime();
