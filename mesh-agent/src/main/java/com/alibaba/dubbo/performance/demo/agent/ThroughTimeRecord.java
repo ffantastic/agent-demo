@@ -6,6 +6,7 @@ public class ThroughTimeRecord {
 
     private AtomicLong throughTimeSum=new AtomicLong(0);
     private AtomicLong count=new AtomicLong(0);
+    private AtomicLong currentConnectionNumber = new AtomicLong(0);
 
     public ThroughTimeRecord(){
     }
@@ -15,15 +16,35 @@ public class ThroughTimeRecord {
         count.getAndIncrement();
     }
 
-    public long GetAverageThroughtTime() {
-        long sum = throughTimeSum.get();
+    public long EstimateCapacitry() {
+        // no lock, can bear the inconsistency
+        long ttSum = throughTimeSum.get();
         long countLong= count.get();
+        long currentCon = currentConnectionNumber.get();
 
         if(countLong == 0){
-            // it is a new host, just use it;
-            return -1;
+            // it is a new host, we believe it has very large capacity
+            return 0;
         }
 
-        return sum/countLong;
+        return -ttSum * currentCon/countLong;
+    }
+
+    public long Connect(){
+        return currentConnectionNumber.incrementAndGet();
+    }
+
+    public long DisConnect(){
+        return currentConnectionNumber.decrementAndGet();
+    }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "ttSum=" + throughTimeSum +
+                ", con=" + count +
+                ", curCon=" + currentConnectionNumber +
+                ", cap="+this.EstimateCapacitry()+
+                '}';
     }
 }

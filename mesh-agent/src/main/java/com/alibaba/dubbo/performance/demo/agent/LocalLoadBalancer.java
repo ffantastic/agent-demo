@@ -37,15 +37,19 @@ public class LocalLoadBalancer {
     public void UpdateTTR(String key,long ttInMS){
             ThroughTimeRecord record = ttrMap.get(key);
             if(record == null){
-                record = new ThroughTimeRecord();
-                ttrMap.put(key,record);
-
                 // this operation is not frequent
                 synchronized (this){
-                    keys.add(key);
+                    record = ttrMap.get(key);
+                    if(record == null){
+                        record = new ThroughTimeRecord();
+                        record.Connect();
+                        ttrMap.put(key,record);
+                        keys.add(key);
+                    }
                 }
             }
 
+            record.DisConnect();
             record.Update(ttInMS);
     }
 
@@ -53,34 +57,35 @@ public class LocalLoadBalancer {
         if(keys.size() == 0){
             return null;
         }
-        String key_minTT=keys.get(0);
-        String key_secMinTT =key_minTT;
-        long minTT = ttrMap.get(key_minTT).GetAverageThroughtTime();
-        long secMinTT = minTT;
+        String key_maxCap= keys.get(0);
+        ThroughTimeRecord val_maxCap = ttrMap.get(key_maxCap);
+        long maxCap = val_maxCap.EstimateCapacitry();
+        StringBuilder debug = new StringBuilder(keys.get(0)+":"+val_maxCap);
 
-        StringBuilder debug = new StringBuilder(key_minTT+":"+minTT);
         for(int i=1;i<keys.size();i++){
-            String key = keys.get(i);
-            long tt =  ttrMap.get(key).GetAverageThroughtTime();
-            debug.append(","+key+":"+tt);
-            if(tt<minTT){
-                minTT = tt;
-                key_minTT = key;
-            }else if(tt<secMinTT){
-                secMinTT = tt;
-                key_secMinTT = key;
+            String key_record =  keys.get(i);
+            ThroughTimeRecord val_record = ttrMap.get(key_record);
+            long cap =  val_record.EstimateCapacitry();
+            debug.append(","+keys.get(i)+":"+val_record);
+            if(cap>maxCap){
+                maxCap = cap;
+                key_maxCap = key_record;
+                val_maxCap = val_record;
             }
         }
 
-        // p = 0.8 to use host with min through time;
-        if(key_minTT == key_secMinTT || random.nextInt(10)<=7){
-            debug.append(", win:"+key_minTT);
+        // p = 0.7 to use host with min through time;
+        if(random.nextInt(10)<=6){
+            debug.append(", win:"+key_maxCap);
             logger.info(debug.toString());
-            return key_minTT;
+            val_maxCap.Connect();
+            return key_maxCap;
         }
 
-        debug.append(", win:"+key_secMinTT);
+        int selectedIndex = random.nextInt(3);
+        debug.append(", win:"+keys.get(selectedIndex));
+        ttrMap.get(keys.get(selectedIndex)).Connect();
         logger.info(debug.toString());
-        return key_secMinTT;
+        return keys.get(selectedIndex);
     }
 }
