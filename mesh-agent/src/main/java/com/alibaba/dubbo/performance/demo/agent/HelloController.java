@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.async.DeferredResult;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -50,17 +51,20 @@ public class HelloController {
     }
 
     @RequestMapping(value = "")
-    public Object invoke(@RequestParam("interface") String interfaceName,
-                         @RequestParam("method") String method,
-                         @RequestParam("parameterTypesString") String parameterTypesString,
-                         @RequestParam("parameter") String parameter) throws Exception {
+    public DeferredResult<Object> invoke(@RequestParam("interface") String interfaceName,
+                                         @RequestParam("method") String method,
+                                         @RequestParam("parameterTypesString") String parameterTypesString,
+                                         @RequestParam("parameter") String parameter) throws Exception {
         String type = System.getProperty("type");   // 获取type参数
+        DeferredResult<Object> result = new DeferredResult<>();
         if ("consumer".equals(type)) {
             return consumer(interfaceName, method, parameterTypesString, parameter);
         } else if ("provider".equals(type)) {
-            return provider(interfaceName, method, parameterTypesString, parameter);
+            result.setResult(provider(interfaceName, method, parameterTypesString, parameter));
+            return result;
         } else {
-            return "Environment variable type is needed to set to provider or consumer.";
+            result.setResult("Environment variable type is needed to set to provider or consumer.");
+            return result;
         }
     }
 
@@ -70,7 +74,7 @@ public class HelloController {
         return (byte[]) result;
     }
 
-    public Integer consumer(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
+    public DeferredResult<Object> consumer(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
 
         if (null == endpoints) {
             synchronized (lock) {
@@ -104,14 +108,25 @@ public class HelloController {
                 .post(requestBody)
                 .build();
 
+        DeferredResult<Object> result =  new DeferredResult<>();
         final long requestStartTime = System.currentTimeMillis();
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-            byte[] bytes = response.body().bytes();
-            String s = new String(bytes);
-            this.lb.UpdateTTR(endpointStr, System.currentTimeMillis() - requestStartTime);
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                logger.error(e.getMessage());
+                result.setErrorResult("Error in getting response from provider agent");
+            }
 
-            return Integer.valueOf(s);
-        }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+                byte[] bytes = response.body().bytes();
+                String s = new String(bytes);
+                HelloController.this.lb.UpdateTTR(endpointStr, System.currentTimeMillis() - requestStartTime);
+                result.setResult(Integer.valueOf(s));
+            }
+        });
+
+        return result;
     }
 }
