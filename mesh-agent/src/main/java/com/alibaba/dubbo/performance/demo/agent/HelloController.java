@@ -5,6 +5,8 @@ import com.alibaba.dubbo.performance.demo.agent.registry.Endpoint;
 import com.alibaba.dubbo.performance.demo.agent.registry.EtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
 import okhttp3.*;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,10 +33,11 @@ public class HelloController {
     private List<Endpoint> endpoints = null;
     private Object lock = new Object();
     private OkHttpClient httpClient;
+    private AsyncHttpClient asyncHttpClient = org.asynchttpclient.Dsl.asyncHttpClient();
 
     private LocalLoadBalancer lb = LocalLoadBalancer.GetInstance();
 
-    @PostConstruct
+/*    @PostConstruct
     public void init() {
         logger.info("PostConstruct: initial http connection pool");
         // 使用100个连接，默认是5个。
@@ -48,7 +51,7 @@ public class HelloController {
                 .writeTimeout(60, TimeUnit.SECONDS)          //不考虑超时
                 .retryOnConnectionFailure(true)
                 .build();
-    }
+    }*/
 
     @RequestMapping(value = "")
     public DeferredResult<Object> invoke(@RequestParam("interface") String interfaceName,
@@ -74,7 +77,7 @@ public class HelloController {
         return (byte[]) result;
     }
 
-    public DeferredResult<Object> consumer(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
+   /* public DeferredResult<Object> consumer(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
 
         if (null == endpoints) {
             synchronized (lock) {
@@ -126,6 +129,58 @@ public class HelloController {
                 result.setResult(Integer.valueOf(s));
             }
         });
+
+        return result;
+    }*/
+
+    public DeferredResult<Object> consumer(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
+
+        if (null == endpoints) {
+            synchronized (lock) {
+                if (null == endpoints) {
+                    endpoints = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService");
+                    for (Endpoint ep : endpoints) {
+                        logger.info("[LB] add host: " + ep.getHost() + ":" + ep.getPort());
+                        this.lb.UpdateTTR(ep.getHost() + ":" + ep.getPort(), 0);
+                    }
+                }
+            }
+        }
+
+        //logger.info("Endpoint size: "+endpoints.size());
+
+        // 简单的负载均衡，随机取一个
+/*        final String endpointStr = this.lb.GetHost();
+        String[] hostAndPort = endpointStr.split(":");
+
+        String url = "http://" + hostAndPort[0] + ":" + hostAndPort[1];*/
+
+        Endpoint endpoint = endpoints.get(random.nextInt(endpoints.size()));
+        String url = "http://" + endpoint.getHost() + ":" +endpoint.getPort();
+
+        org.asynchttpclient.Request request = org.asynchttpclient.Dsl.post(url)
+                .addFormParam("interface", "com.alibaba.dubbo.performance.demo.provider.IHelloService")
+                .addFormParam("method", method)
+                .addFormParam("parameterTypesString", parameterTypesString)
+                .addFormParam("parameter", parameter)
+                .build();
+
+        final long requestStartTime = System.currentTimeMillis();
+        DeferredResult<Object> result = new DeferredResult<>();
+        ListenableFuture<org.asynchttpclient.Response> responseFuture = asyncHttpClient.executeRequest(request);
+
+        Runnable callback = () -> {
+            try {
+                byte[] bytes = responseFuture.get().getResponseBody().getBytes();
+                String s = new String(bytes);
+                //HelloController.this.lb.UpdateTTR(endpointStr, System.currentTimeMillis() - requestStartTime);
+                result.setResult(Integer.valueOf(s));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+        responseFuture.addListener(callback, null);
 
         return result;
     }
