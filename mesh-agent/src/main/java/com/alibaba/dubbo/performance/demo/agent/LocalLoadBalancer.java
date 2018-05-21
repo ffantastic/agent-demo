@@ -54,9 +54,10 @@ public class LocalLoadBalancer {
             return null;
         }
         String key_minTT=keys.get(0);
-        String key_secMinTT =keys.get(0);
+        String key_secMinTT =key_minTT;
         long minTT = ttrMap.get(key_minTT).GetAverageThroughtTime();
-        long secMinTT = ttrMap.get(key_secMinTT).GetAverageThroughtTime();
+        long secMinTT = minTT;
+
         StringBuilder debug = new StringBuilder(key_minTT+":"+minTT);
         for(int i=1;i<keys.size();i++){
             String key = keys.get(i);
@@ -71,18 +72,13 @@ public class LocalLoadBalancer {
             }
         }
 
-        if(key_minTT == key_secMinTT){
+        // p = 0.8 to use host with min through time;
+        if(key_minTT == key_secMinTT || random.nextInt(10)<=7){
             debug.append(", win:"+key_minTT);
             logger.info(debug.toString());
             return key_minTT;
         }
 
-        // p = 0.8 to use host with min through time;
-        if(random.nextInt(10)<=8){
-            debug.append(", win:"+key_minTT);
-            logger.info(debug.toString());
-            return key_minTT;
-        }
         debug.append(", win:"+key_secMinTT);
         logger.info(debug.toString());
         return key_secMinTT;

@@ -77,7 +77,8 @@ public class HelloController {
         return (byte[]) result;
     }
 
-   /* public DeferredResult<Object> consumer(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
+
+    public DeferredResult<Object> consumer(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
 
         if (null == endpoints) {
             synchronized (lock) {
@@ -99,64 +100,8 @@ public class HelloController {
 
         String url = "http://" + hostAndPort[0] + ":" + hostAndPort[1];
 
-        RequestBody requestBody = new FormBody.Builder()
-                .add("interface", interfaceName)
-                .add("method", method)
-                .add("parameterTypesString", parameterTypesString)
-                .add("parameter", parameter)
-                .build();
-
-        Request request = new Request.Builder()
-                .url(url)
-                .post(requestBody)
-                .build();
-
-        DeferredResult<Object> result =  new DeferredResult<>();
-        final long requestStartTime = System.currentTimeMillis();
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                logger.error(e.getMessage());
-                result.setErrorResult("Error in getting response from provider agent");
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-                byte[] bytes = response.body().bytes();
-                String s = new String(bytes);
-                HelloController.this.lb.UpdateTTR(endpointStr, System.currentTimeMillis() - requestStartTime);
-                result.setResult(Integer.valueOf(s));
-            }
-        });
-
-        return result;
-    }*/
-
-    public DeferredResult<Object> consumer(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
-
-        if (null == endpoints) {
-            synchronized (lock) {
-                if (null == endpoints) {
-                    endpoints = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService");
-                    for (Endpoint ep : endpoints) {
-                        logger.info("[LB] add host: " + ep.getHost() + ":" + ep.getPort());
-                        this.lb.UpdateTTR(ep.getHost() + ":" + ep.getPort(), 0);
-                    }
-                }
-            }
-        }
-
-        //logger.info("Endpoint size: "+endpoints.size());
-
-        // 简单的负载均衡，随机取一个
-/*        final String endpointStr = this.lb.GetHost();
-        String[] hostAndPort = endpointStr.split(":");
-
-        String url = "http://" + hostAndPort[0] + ":" + hostAndPort[1];*/
-
-        Endpoint endpoint = endpoints.get(random.nextInt(endpoints.size()));
-        String url = "http://" + endpoint.getHost() + ":" +endpoint.getPort();
+     /*   Endpoint endpoint = endpoints.get(random.nextInt(endpoints.size()));
+        String url = "http://" + endpoint.getHost() + ":" +endpoint.getPort();*/
 
         org.asynchttpclient.Request request = org.asynchttpclient.Dsl.post(url)
                 .addFormParam("interface", "com.alibaba.dubbo.performance.demo.provider.IHelloService")
@@ -173,7 +118,7 @@ public class HelloController {
             try {
                 byte[] bytes = responseFuture.get().getResponseBody().getBytes();
                 String s = new String(bytes);
-                //HelloController.this.lb.UpdateTTR(endpointStr, System.currentTimeMillis() - requestStartTime);
+                HelloController.this.lb.UpdateTTR(endpointStr, System.currentTimeMillis() - requestStartTime);
                 result.setResult(Integer.valueOf(s));
 
             } catch (Exception e) {
