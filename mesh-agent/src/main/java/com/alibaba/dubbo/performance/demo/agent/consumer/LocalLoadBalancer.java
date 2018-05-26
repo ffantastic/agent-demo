@@ -1,4 +1,4 @@
-package com.alibaba.dubbo.performance.demo.agent;
+package com.alibaba.dubbo.performance.demo.agent.consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +82,7 @@ public class LocalLoadBalancer {
             return key_maxCap;
         }
 
-        int selectedIndex = random.nextInt(3);
+        int selectedIndex = random.nextInt(keys.size());
         debug.append(", win:"+keys.get(selectedIndex));
         ttrMap.get(keys.get(selectedIndex)).Connect();
         logger.info(debug.toString());

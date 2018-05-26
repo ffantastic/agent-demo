@@ -1,5 +1,6 @@
 package com.alibaba.dubbo.performance.demo.agent;
 
+import com.alibaba.dubbo.performance.demo.agent.consumer.LocalLoadBalancer;
 import com.alibaba.dubbo.performance.demo.agent.dubbo.RpcClient;
 import com.alibaba.dubbo.performance.demo.agent.registry.Endpoint;
 import com.alibaba.dubbo.performance.demo.agent.registry.EtcdRegistry;
@@ -14,14 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 
-import javax.annotation.PostConstruct;
-import java.io.IOException;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
-@RestController
+
 public class HelloController {
 
     private Logger logger = LoggerFactory.getLogger(HelloController.class);
@@ -53,7 +50,7 @@ public class HelloController {
                 .build();
     }*/
 
-    @RequestMapping(value = "")
+
     public DeferredResult<Object> invoke(@RequestParam("interface") String interfaceName,
                                          @RequestParam("method") String method,
                                          @RequestParam("parameterTypesString") String parameterTypesString,
