@@ -55,13 +55,13 @@ public class AgentRequestEncoder extends MessageToByteEncoder {
 
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(out));
         writer.println(data.getForwardStartTime());
-        writer.println(data.isKeepAlive());
+        //writer.println(data.isKeepAlive());
 
         if(data.IsRequest){
-            writer.println(data.getP_interface());
-            writer.println(data.getP_parameterTypesString());
+            writer.println(data.getP_interfaceCode());
+            writer.println(data.getP_parameterTypesStringCode());
             writer.println(data.getP_parameter());
-            writer.println(data.getP_method());
+            writer.println(data.getP_methodCode());
         }else{
             writer.println(data.getResult());
         }

@@ -5,9 +5,15 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.DefaultHttpResponse;
+
+import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
 
 public class ConsumerAgentBackendHandler extends SimpleChannelInboundHandler<AgentRequest> {
-
+    private static boolean isKeepAlive=false;
     private BackendManager bm;
 
     public ConsumerAgentBackendHandler(BackendManager backendManager) {
@@ -22,8 +28,15 @@ public class ConsumerAgentBackendHandler extends SimpleChannelInboundHandler<Age
         BackendManager.ForwardMetaInfo metaInfo = bm.FinishBackendForwarding(requestId,forwardEndTime-agentRequest.getForwardStartTime());
         if(metaInfo != null){
             Channel inboundChannel = metaInfo.inboundChannel;
-            //System.out.println("result: "+Bytes.byteArrayToHex(agentRequest.getResult()));
-            inboundChannel.writeAndFlush(agentRequest.ConvertToHttp()).addListener(ChannelFutureListener.CLOSE);
+            // System.out.println("result: "+agentRequest.getResult());
+            DefaultHttpResponse response = agentRequest.ConvertToHttp();
+            response.headers().setInt(CONTENT_LENGTH, ((DefaultFullHttpResponse) response).content().readableBytes());
+            if(isKeepAlive){
+                response.headers().set(CONNECTION, KEEP_ALIVE);
+                inboundChannel.writeAndFlush(response);
+            }else{
+                inboundChannel.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+            }
         }
     }
 }

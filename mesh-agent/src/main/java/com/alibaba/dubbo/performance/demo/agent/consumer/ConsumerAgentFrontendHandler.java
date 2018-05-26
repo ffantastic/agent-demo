@@ -35,7 +35,7 @@ public class ConsumerAgentFrontendHandler extends SimpleChannelInboundHandler<Ob
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         FullHttpRequest req = (FullHttpRequest)msg;
         long requestId =  bm.ForwardToBackend(req,ctx.channel());
-        logger.info("Inbound request [id: {}] is forwarded.",requestId);
+       // logger.info("Inbound request [id: {}] is forwarded.",requestId);
     }
 
     @Override

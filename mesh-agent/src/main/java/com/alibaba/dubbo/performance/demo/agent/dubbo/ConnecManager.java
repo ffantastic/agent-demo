@@ -24,7 +24,7 @@ public class ConnecManager {
 
     private Logger logger = LoggerFactory.getLogger(ConnecManager.class);
 
-    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();
+    private IRegistry registry =new EtcdRegistry(System.getProperty("etcd.url"));// new LocalEtcdRegistry();
 
     private Bootstrap bootstrap;
 
@@ -32,7 +32,7 @@ public class ConnecManager {
 
     private AtomicReference<Channel> inboundChannel = new AtomicReference<>(null);
 
-    private ConcurrentHashMap<Long, UpstreamMetaInfo> upstreamMetaMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Long, Long> upstreamMetaMap = new ConcurrentHashMap<>();
 
     public ConnecManager() {
     }
@@ -69,9 +69,9 @@ public class ConnecManager {
 
     public void ForwardToProvider(AgentRequest request){
         RpcInvocation invocation = new RpcInvocation();
-        invocation.setMethodName(request.getP_method());
-        invocation.setAttachment("path", request.getP_interface());
-        invocation.setParameterTypes(request.getP_parameterTypesString());    // Dubbo内部用"Ljava/lang/String"来表示参数类型是String
+        invocation.setMethodName(AgentRequest.CodeToMethod(request.getP_methodCode()));
+        invocation.setAttachment("path", AgentRequest.CodeToInterface(request.getP_interfaceCode()));
+        invocation.setParameterTypes(AgentRequest.CodeToParamterType(request.getP_parameterTypesStringCode()));    // Dubbo内部用"Ljava/lang/String"来表示参数类型是String
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(out));
@@ -91,36 +91,24 @@ public class ConnecManager {
 
         logger.info("requestId=" + req.getId());
 
-        upstreamMetaMap.put(req.getId(),new UpstreamMetaInfo(request.getForwardStartTime(),request.isKeepAlive()));
+        upstreamMetaMap.put(req.getId(),request.getForwardStartTime());
         channel.writeAndFlush(req);
     }
 
-    public UpstreamMetaInfo FinishProviderForwardingAndWriteResponse(RpcResponse response) {
+    public void FinishProviderForwardingAndWriteResponse(RpcResponse response) {
         long requestId = Long.parseLong(response.getRequestId());
-        UpstreamMetaInfo metaInfo = this.upstreamMetaMap.get(requestId);
+        Long metaInfo = this.upstreamMetaMap.get(requestId);
         if (metaInfo == null) {
             logger.error("Forward meta information is lost!!! request id: " + requestId);
-            return null;
+            return;
         }
 
         this.upstreamMetaMap.remove(requestId);
 
         AgentRequest agent = AgentRequest.FromDubbo(response);
-        agent.setForwardStartTime(metaInfo.ForwardStartTime);
-        agent.setKeepAlive(metaInfo.KeepAlive);
+        agent.setForwardStartTime(metaInfo);
+
         inboundChannel.get().writeAndFlush(agent);
-        return metaInfo;
-    }
-
-
-    public static class UpstreamMetaInfo{
-        public long ForwardStartTime;
-        public boolean KeepAlive;
-
-        public UpstreamMetaInfo(long forwardStartTime,boolean keepAlive){
-            this.ForwardStartTime=forwardStartTime;
-            this.KeepAlive=keepAlive;
-        }
     }
 
 }
