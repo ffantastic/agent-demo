@@ -1,6 +1,5 @@
 package com.alibaba.dubbo.performance.demo.agent.consumer;
 
-import com.alibaba.dubbo.performance.demo.agent.HelloController;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
