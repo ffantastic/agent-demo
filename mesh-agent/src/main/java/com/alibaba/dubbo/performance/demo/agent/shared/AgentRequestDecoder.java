@@ -1,8 +1,6 @@
 package com.alibaba.dubbo.performance.demo.agent.shared;
 
-import com.alibaba.dubbo.performance.demo.agent.dubbo.DubboRpcDecoder;
 import com.alibaba.dubbo.performance.demo.agent.dubbo.model.Bytes;
-import com.alibaba.dubbo.performance.demo.agent.dubbo.model.RpcResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelHandlerContext;
@@ -11,7 +9,6 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,7 +22,7 @@ public class AgentRequestDecoder extends ByteToMessageDecoder {
     }
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
-        System.out.println(type+" decode................");
+       // System.out.println(type+" decode................");
 
         try {
             do {
@@ -39,7 +36,7 @@ public class AgentRequestDecoder extends ByteToMessageDecoder {
                 }
                 if (msg == AgentRequestDecoder.DecodeResult.NEED_MORE_INPUT) {
                     byteBuf.readerIndex(savedReaderIndex);
-                    System.out.println(type+" avail: "+byteBuf.readableBytes());
+                    // System.out.println(type+" avail: "+byteBuf.readableBytes());
                     break;
                 }
 
@@ -50,7 +47,6 @@ public class AgentRequestDecoder extends ByteToMessageDecoder {
                 byteBuf.discardReadBytes();
             }
         }
-
 
         //list.add(decode2(byteBuf));
     }
@@ -69,6 +65,12 @@ public class AgentRequestDecoder extends ByteToMessageDecoder {
 
         byte[] header = new byte[HEADER_LENGTH];
         byteBuf.readBytes(header);
+
+//        byte[] magic = new byte[2];
+//        magic[0]=header[0];
+//        magic[1]=header[1];
+//        System.out.println("MAGIC NUMBER\t"+type+" : "+Bytes.byteArrayToHex(magic));
+
         byte[] dataLen = Arrays.copyOfRange(header, 11, 15);
         int len = Bytes.bytes2int(dataLen);
         int tt = len + HEADER_LENGTH;
@@ -83,7 +85,7 @@ public class AgentRequestDecoder extends ByteToMessageDecoder {
 
         agentRequest.setRequestId(Bytes.bytes2long(header, 2));
 
-        InputStream in = new ByteBufInputStream(byteBuf, len - 1);
+        InputStream in = new ByteBufInputStream(byteBuf, len );
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         agentRequest.setForwardStartTime(Long.parseLong(reader.readLine()));
         agentRequest.setKeepAlive(Boolean.parseBoolean(reader.readLine()));
@@ -94,7 +96,7 @@ public class AgentRequestDecoder extends ByteToMessageDecoder {
             agentRequest.setP_parameter(reader.readLine());
             agentRequest.setP_method(reader.readLine());
         } else {
-            agentRequest.setResult(reader.readLine().getBytes());
+            agentRequest.setResult(Integer.parseInt(reader.readLine()));
         }
 
         in.close();

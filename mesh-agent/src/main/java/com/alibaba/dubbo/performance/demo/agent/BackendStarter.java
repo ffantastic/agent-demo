@@ -5,6 +5,8 @@ import com.alibaba.dubbo.performance.demo.agent.provider.ProviderAgentServer;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.Properties;
+
 
 @Component
 public class BackendStarter implements CommandLineRunner {
@@ -17,12 +19,15 @@ public class BackendStarter implements CommandLineRunner {
             new ProviderAgentServer().Start();
         } else {
             LocalTest();
-            // throw new RuntimeException("Environment variable type is needed to set to provider or consumer.");
+            throw new RuntimeException("Environment variable type is needed to set to provider or consumer.");
         }
     }
 
 
     private void LocalTest() throws Exception {
+        Properties props = System.getProperties();
+        props.setProperty("dubbo.protocol.port","20880");
+
         new Thread(()->{
             try {
                 new ProviderAgentServer().Start();

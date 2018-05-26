@@ -20,7 +20,7 @@ public class AgentRequestEncoder extends MessageToByteEncoder {
     protected static final short MAGIC = (short) 0xaf99;
     @Override
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf buffer) throws Exception {
-        System.out.println("encode................");
+        //System.out.println("encode................");
         AgentRequest req = (AgentRequest)msg;
 
         // header.
@@ -63,7 +63,7 @@ public class AgentRequestEncoder extends MessageToByteEncoder {
             writer.println(data.getP_parameter());
             writer.println(data.getP_method());
         }else{
-            writer.println(new String(data.getResult()));
+            writer.println(data.getResult());
         }
 
         writer.flush();

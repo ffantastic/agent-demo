@@ -1,7 +1,6 @@
 package com.alibaba.dubbo.performance.demo.agent;
 
 import com.alibaba.dubbo.performance.demo.agent.consumer.LocalLoadBalancer;
-import com.alibaba.dubbo.performance.demo.agent.dubbo.RpcClient;
 import com.alibaba.dubbo.performance.demo.agent.registry.Endpoint;
 import com.alibaba.dubbo.performance.demo.agent.registry.EtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
@@ -10,9 +9,7 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.List;
@@ -25,7 +22,6 @@ public class HelloController {
 
     private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));
 
-    private RpcClient rpcClient = new RpcClient(registry);
     private Random random = new Random();
     private List<Endpoint> endpoints = null;
     private Object lock = new Object();
@@ -70,7 +66,7 @@ public class HelloController {
 
     public byte[] provider(String interfaceName, String method, String parameterTypesString, String parameter) throws Exception {
 
-        Object result = rpcClient.invoke(interfaceName, method, parameterTypesString, parameter);
+        Object result = null;//rpcClient.invoke(interfaceName, method, parameterTypesString, parameter);
         return (byte[]) result;
     }
 

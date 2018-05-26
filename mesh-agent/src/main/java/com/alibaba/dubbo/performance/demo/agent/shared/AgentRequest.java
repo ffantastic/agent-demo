@@ -1,5 +1,8 @@
 package com.alibaba.dubbo.performance.demo.agent.shared;
 
+import com.alibaba.dubbo.performance.demo.agent.dubbo.model.Bytes;
+import com.alibaba.dubbo.performance.demo.agent.dubbo.model.RpcResponse;
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -20,7 +23,7 @@ public class AgentRequest {
     private String p_parameter;
     private String p_method;
     private boolean keepAlive ;
-    private byte[] result;
+    private int result;
 
     public static AgentRequest BuildFromHttp(FullHttpRequest request) {
         AgentRequest agentRequest = new AgentRequest();
@@ -52,12 +55,31 @@ public class AgentRequest {
             }
         }
 
+        //System.out.println("send agent request , parameter: "+agentRequest.getP_parameter()+", hashcode "+agentRequest.getP_parameter().hashCode());
+
         return agentRequest;
     }
 
-    public  DefaultFullHttpResponse ConvertToHttp(){
+    public static AgentRequest FromDubbo(RpcResponse response) {
+        AgentRequest ar=new AgentRequest();
+        ar.IsRequest=false;
+        ar.setRequestId(Long.parseLong(response.getRequestId()));
+        String resultStr = null;//new String(response.getBytes());
+        byte[] resultByte = response.getBytes();
+        //System.out.println(Bytes.byteArrayToHex(resultByte));
+        if(resultByte[0] == 0x0a){
+            resultStr=new String(resultByte,1,resultByte.length-2);
+        }else{
+            resultStr=new String(resultByte);
+        }
+        ar.setResult(Integer.valueOf(resultStr));
 
-        DefaultFullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.ACCEPTED, Unpooled.wrappedBuffer(result));
+        return ar;
+    }
+
+    public  DefaultFullHttpResponse ConvertToHttp(){
+        String resultString = String.valueOf(result);
+        DefaultFullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.ACCEPTED, Unpooled.wrappedBuffer(resultString.getBytes()));
 //        ctx.writeAndFlush(response);
 //        ctx.close();
 
@@ -119,11 +141,11 @@ public class AgentRequest {
         this.keepAlive = keepAlive;
     }
 
-    public byte[] getResult() {
+    public int getResult() {
         return result;
     }
 
-    public void setResult(byte[] result) {
+    public void setResult(int result) {
         this.result = result;
     }
 

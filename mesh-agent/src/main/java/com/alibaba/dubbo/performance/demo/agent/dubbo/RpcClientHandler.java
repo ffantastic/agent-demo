@@ -9,13 +9,12 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 public class RpcClientHandler extends SimpleChannelInboundHandler<RpcResponse> {
 
+    private ConnecManager conncMgr;
+    public RpcClientHandler(ConnecManager conncMgr){
+        this.conncMgr=conncMgr;
+    }
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, RpcResponse response) {
-        String requestId = response.getRequestId();
-        RpcFuture future = RpcRequestHolder.get(requestId);
-        if(null != future){
-            RpcRequestHolder.remove(requestId);
-            future.done(response);
-        }
+        this.conncMgr.FinishProviderForwardingAndWriteResponse(response);
     }
 }

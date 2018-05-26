@@ -1,6 +1,5 @@
 package com.alibaba.dubbo.performance.demo.agent.consumer;
 
-import com.alibaba.dubbo.performance.demo.agent.dubbo.model.Bytes;
 import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequest;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -23,7 +22,7 @@ public class ConsumerAgentBackendHandler extends SimpleChannelInboundHandler<Age
         BackendManager.ForwardMetaInfo metaInfo = bm.FinishBackendForwarding(requestId,forwardEndTime-agentRequest.getForwardStartTime());
         if(metaInfo != null){
             Channel inboundChannel = metaInfo.inboundChannel;
-            System.out.println("result: "+Bytes.byteArrayToHex(agentRequest.getResult()));
+            //System.out.println("result: "+Bytes.byteArrayToHex(agentRequest.getResult()));
             inboundChannel.writeAndFlush(agentRequest.ConvertToHttp()).addListener(ChannelFutureListener.CLOSE);
         }
     }

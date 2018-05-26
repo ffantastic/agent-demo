@@ -76,27 +76,28 @@ public class DubboRpcDecoder extends ByteToMessageDecoder {
             return DecodeResult.NEED_MORE_INPUT;
         }
 
-        byteBuf.readerIndex(savedReaderIndex);
-        byte[] data = new byte[tt];
+        // skip response value type and the last 0x0a
+        byteBuf.readerIndex(savedReaderIndex+HEADER_LENGTH+2);
+        byte[] data = new byte[len-3];
         byteBuf.readBytes(data);
 
-
+        // skip the last 0x0a
+        byteBuf.readByte();
 
         //byte[] data = new byte[byteBuf.readableBytes()];
         //byteBuf.readBytes(data);
 
         // HEADER_LENGTH + 1，忽略header & Response value type的读取，直接读取实际Return value
         // dubbo返回的body中，前后各有一个换行，去掉
-        byte[] subArray = Arrays.copyOfRange(data,HEADER_LENGTH + 2, data.length -1 );
+       // byte[] subArray = Arrays.copyOfRange(data,HEADER_LENGTH + 2, data.length -1 );
 
-        String s = new String(subArray);
 
-        byte[] requestIdBytes = Arrays.copyOfRange(data,4,12);
+        byte[] requestIdBytes = Arrays.copyOfRange(header,4,12);
         long requestId = Bytes.bytes2long(requestIdBytes,0);
 
         RpcResponse response = new RpcResponse();
         response.setRequestId(String.valueOf(requestId));
-        response.setBytes(subArray);
+        response.setBytes(data);
         return response;
     }
 }

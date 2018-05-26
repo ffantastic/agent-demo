@@ -1,5 +1,6 @@
 package com.alibaba.dubbo.performance.demo.agent.provider;
 
+import com.alibaba.dubbo.performance.demo.agent.dubbo.ConnecManager;
 import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequestDecoder;
 import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequestEncoder;
 import io.netty.bootstrap.ServerBootstrap;
@@ -10,9 +11,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.serialization.ClassResolvers;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
@@ -28,6 +26,8 @@ public class ProviderAgentServer {
         final EventLoopGroup workerGroup = new NioEventLoopGroup(4);
 
         try {
+            final ConnecManager connecManager = new ConnecManager();
+            connecManager.Init(workerGroup);
             logger.info("Provider Agent Server starting... binding port,{}", LOCAL_PORT);
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
@@ -39,12 +39,10 @@ public class ProviderAgentServer {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
-//                            ch.pipeline().addLast(new AgentRequestDecoder("provider"));
-//                            ch.pipeline().addLast(new AgentRequestEncoder());
-                            ch.pipeline().addLast(new ObjectDecoder(ClassResolvers.cacheDisabled(null)));
-                            ch.pipeline().addLast(new ObjectEncoder());
+                            ch.pipeline().addLast(new AgentRequestDecoder("provider"));
+                            ch.pipeline().addLast(new AgentRequestEncoder());
                             //TODO cache ProviderAgentFrontendHandler ?
-                            ch.pipeline().addLast(new ProviderAgentFrontendHandler());
+                            ch.pipeline().addLast(new ProviderAgentFrontendHandler(connecManager));
                         }
                     });//.childOption(ChannelOption.AUTO_READ, false);
 

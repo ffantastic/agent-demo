@@ -1,6 +1,5 @@
 package com.alibaba.dubbo.performance.demo.agent.consumer;
 
-;
 import com.alibaba.dubbo.performance.demo.agent.registry.Endpoint;
 import com.alibaba.dubbo.performance.demo.agent.registry.EtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
@@ -14,10 +13,6 @@ import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.serialization.ClassResolvers;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BackendManager {
     private Logger logger = LoggerFactory.getLogger(BackendManager.class);
 
-    private IRegistry registry = new LocalEtcdRegistry();// new EtcdRegistry(System.getProperty("etcd.url"));
+    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();
 
     private Map<String, BackendConnection> backendConnectionMap = new HashMap<>();
 
@@ -136,10 +131,10 @@ public class BackendManager {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             socketChannel.pipeline().addLast(
-                                   // new AgentRequestEncoder(),
-                                    // new AgentRequestDecoder("Consumer"),
-                                    new ObjectEncoder(),
-                                    new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
+                                    new AgentRequestEncoder(),
+                                     new AgentRequestDecoder("Consumer"),
+//                                    new ObjectEncoder(),
+//                                    new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
                                     new ConsumerAgentBackendHandler(BackendManager.this));
                         }
                     })
