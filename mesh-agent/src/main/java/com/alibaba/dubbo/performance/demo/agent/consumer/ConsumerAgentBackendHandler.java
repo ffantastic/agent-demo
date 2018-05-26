@@ -13,7 +13,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
 
 public class ConsumerAgentBackendHandler extends SimpleChannelInboundHandler<AgentRequest> {
-    private static boolean isKeepAlive=false;
+    private static boolean isKeepAlive=true;
     private BackendManager bm;
 
     public ConsumerAgentBackendHandler(BackendManager backendManager) {
