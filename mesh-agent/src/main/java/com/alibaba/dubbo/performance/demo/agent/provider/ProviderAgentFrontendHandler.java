@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
         @Override
         protected void channelRead0(ChannelHandlerContext channelHandlerContext, AgentRequest agentRequest) throws Exception {
-            logger.info("Provider agent receive request id : "+agentRequest.getRequestId());
+           // logger.info("Provider agent receive request id : "+agentRequest.getRequestId());
 //            System.out.println("keepalive:"+agentRequest.isKeepAlive());
 //            System.out.println("IsRequest:"+agentRequest.IsRequest);
 //            System.out.println("parameter:"+agentRequest.getP_parameter());
