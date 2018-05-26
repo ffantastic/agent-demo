@@ -24,7 +24,7 @@ public class ConnecManager {
 
     private Logger logger = LoggerFactory.getLogger(ConnecManager.class);
 
-    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();//
+    private IRegistry registry = new LocalEtcdRegistry();//new EtcdRegistry(System.getProperty("etcd.url"));//
 
     private Bootstrap bootstrap;
 
@@ -49,7 +49,18 @@ public class ConnecManager {
                 .handler(new RpcClientInitializer(this));
 
         int port = Integer.valueOf(System.getProperty("dubbo.protocol.port"));
-        channel = bootstrap.connect("127.0.0.1", port).sync().channel();
+        boolean bindSuccess = false;
+        while(!bindSuccess) {
+            logger.info("try to bind localhost: "+port);
+            try {
+                channel = bootstrap.connect("127.0.0.1", port).sync().channel();
+                bindSuccess=true;
+            }catch (Exception ex){
+                ex.printStackTrace();
+                logger.error("binding to port "+port+" failed, try again after 50ms");
+                Thread.sleep(50);
+            }
+        }
     }
 
     public boolean SetInboundChannel(Channel inbound){

@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BackendManager {
     private Logger logger = LoggerFactory.getLogger(BackendManager.class);
 
-    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();
+    private IRegistry registry = new LocalEtcdRegistry();//new EtcdRegistry(System.getProperty("etcd.url"));//
 
     private Map<String, BackendConnection> backendConnectionMap = new HashMap<>();
 
@@ -145,18 +145,25 @@ public class BackendManager {
         }
 
         public void Bind(final CountDownLatch latch) {
-            ChannelFuture f = bootstrap.connect(host, port);
-            channel = f.channel();
+            boolean bindSuccess = false;
+            while(!bindSuccess){
+                try{
+                    logger.info("try to bind localhost: "+port);
 
-            f.addListener((future) -> {
-                if (future.isSuccess()) {
-                    BackendManager.this.logger.info("Succeed to bind to backend server: " + host + ":" + port);
-                } else {
-                    BackendManager.this.logger.error("Failed to bind to backend server: " + host + ":" + port);
+                    ChannelFuture f = bootstrap.connect(host, port).sync();
+                    channel = f.channel();
+                    bindSuccess=true;
+                    latch.countDown();
+                }catch (Exception ex){
+                    logger.error("binding to port "+port+" failed, try again after 50ms");
+                    try {
+                        Thread.sleep(50);
+                    }catch (InterruptedException e){
+                        // swallow
+                    }
                 }
+            }
 
-                latch.countDown();
-            });
         }
     }
 

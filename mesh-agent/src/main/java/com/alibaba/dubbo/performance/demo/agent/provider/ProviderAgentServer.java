@@ -32,7 +32,7 @@ public class ProviderAgentServer {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .handler(new LoggingHandler(LogLevel.INFO))
+                    //.handler(new LoggingHandler(LogLevel.INFO))
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .option(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
