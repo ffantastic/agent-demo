@@ -24,7 +24,7 @@ public class ConnecManager {
 
     private Logger logger = LoggerFactory.getLogger(ConnecManager.class);
 
-    private IRegistry registry =new EtcdRegistry(System.getProperty("etcd.url"));// new LocalEtcdRegistry();
+    private IRegistry registry =new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();//
 
     private Bootstrap bootstrap;
 

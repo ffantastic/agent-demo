@@ -34,14 +34,15 @@ public class ConsumerAgentFrontendHandler extends SimpleChannelInboundHandler<Ob
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         FullHttpRequest req = (FullHttpRequest)msg;
-        long requestId =  bm.ForwardToBackend(req,ctx.channel());
+        long requestId =  bm.ForwardToBackend(req,ctx);
        // logger.info("Inbound request [id: {}] is forwarded.",requestId);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
+        //cause.printStackTrace();
         logger.error("exception caught in frontend handler");
+        logger.error(cause.getMessage());
         Channel ch = ctx.channel();
         if (ch.isActive()) {
             ch.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);

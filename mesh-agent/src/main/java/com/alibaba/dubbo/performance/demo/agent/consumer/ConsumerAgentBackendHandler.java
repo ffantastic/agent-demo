@@ -27,7 +27,7 @@ public class ConsumerAgentBackendHandler extends SimpleChannelInboundHandler<Age
         long requestId = agentRequest.getRequestId();
         BackendManager.ForwardMetaInfo metaInfo = bm.FinishBackendForwarding(requestId,forwardEndTime-agentRequest.getForwardStartTime());
         if(metaInfo != null){
-            Channel inboundChannel = metaInfo.inboundChannel;
+            ChannelHandlerContext inboundChannel = metaInfo.inboundChannel;
             // System.out.println("result: "+agentRequest.getResult());
             DefaultHttpResponse response = agentRequest.ConvertToHttp();
             response.headers().setInt(CONTENT_LENGTH, ((DefaultFullHttpResponse) response).content().readableBytes());

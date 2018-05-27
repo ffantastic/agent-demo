@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BackendManager {
     private Logger logger = LoggerFactory.getLogger(BackendManager.class);
 
-    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();
+    private IRegistry registry =new EtcdRegistry(System.getProperty("etcd.url"));// new LocalEtcdRegistry();//
 
     private Map<String, BackendConnection> backendConnectionMap = new HashMap<>();
 
@@ -67,7 +67,7 @@ public class BackendManager {
         logger.info("BackendManager initialization succeed!");
     }
 
-    public Long ForwardToBackend(FullHttpRequest request, Channel inboundChannel) {
+    public Long ForwardToBackend(FullHttpRequest request, ChannelHandlerContext inboundChannel) {
         Long nextId = idGen.incrementAndGet();
         // select a backend
         String backendHostName = this.loadBalancer.GetHost();
@@ -101,10 +101,10 @@ public class BackendManager {
 
     public static class ForwardMetaInfo {
         public String forwardHost;
-        public Channel inboundChannel;
+        public ChannelHandlerContext inboundChannel;
 
 
-        public ForwardMetaInfo(String host, Channel channel ) {
+        public ForwardMetaInfo(String host, ChannelHandlerContext channel ) {
             this.forwardHost = host;
             this.inboundChannel = channel;
         }
