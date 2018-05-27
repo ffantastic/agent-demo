@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BackendManager {
     private Logger logger = LoggerFactory.getLogger(BackendManager.class);
 
-    private IRegistry registry =new EtcdRegistry(System.getProperty("etcd.url"));// new LocalEtcdRegistry();//
+    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));// new LocalEtcdRegistry();//
 
     private Map<String, BackendConnection> backendConnectionMap = new HashMap<>();
 
@@ -68,26 +68,22 @@ public class BackendManager {
     }
 
     public Long ForwardToBackend(FullHttpRequest request, ChannelHandlerContext inboundChannel) {
+
+        // protocol conversion, if throw a exception, no request id will be assigned.
+        AgentRequest agentRequest = AgentRequest.BuildFromHttp(request);
+
         Long nextId = idGen.incrementAndGet();
-        try {
-            // select a backend
-            String backendHostName = this.loadBalancer.GetHost();
-            // map next id to meta data about this forwarding, it is to be used for writing response back from backend
-            forwardingReq.put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
+        // select a backend
+        String backendHostName = this.loadBalancer.GetHost();
+        // map next id to meta data about this forwarding, it is to be used for writing response back from backend
+        forwardingReq.put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
 
-            // protocol conversion
-            AgentRequest agentRequest = AgentRequest.BuildFromHttp(request);
-
-            //forward request
-            BackendConnection backend = backendConnectionMap.get(backendHostName);
-            agentRequest.setForwardStartTime(System.currentTimeMillis());
-            agentRequest.setRequestId(nextId);
-            backend.channel.writeAndFlush(agentRequest);
-        }catch (Throwable ex){
-            logger.error("exception caught in ForwardToBackend, re-throw.");
-            throw ex;
-        }
-
+        //forward request
+        BackendConnection backend = backendConnectionMap.get(backendHostName);
+        agentRequest.setForwardStartTime(System.currentTimeMillis());
+        agentRequest.setRequestId(nextId);
+        backend.channel.writeAndFlush(agentRequest);
+        
         return nextId;
     }
 
@@ -98,7 +94,7 @@ public class BackendManager {
             return null;
         }
 
-        this.loadBalancer.UpdateTTR(metaInfo.forwardHost,throughtTime);
+        this.loadBalancer.UpdateTTR(metaInfo.forwardHost, throughtTime);
         this.forwardingReq.remove(requestId);
 
         return metaInfo;
@@ -109,7 +105,7 @@ public class BackendManager {
         public ChannelHandlerContext inboundChannel;
 
 
-        public ForwardMetaInfo(String host, ChannelHandlerContext channel ) {
+        public ForwardMetaInfo(String host, ChannelHandlerContext channel) {
             this.forwardHost = host;
             this.inboundChannel = channel;
         }
@@ -137,7 +133,7 @@ public class BackendManager {
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             socketChannel.pipeline().addLast(
                                     new AgentRequestEncoder(),
-                                     new AgentRequestDecoder("Consumer"),
+                                    new AgentRequestDecoder("Consumer"),
 //                                    new ObjectEncoder(),
 //                                    new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
                                     new ConsumerAgentBackendHandler(BackendManager.this));
@@ -146,24 +142,24 @@ public class BackendManager {
                     .option(ChannelOption.SO_KEEPALIVE, true)
                     .option(ChannelOption.TCP_NODELAY, true)
                     .option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
-                    //.option(ChannelOption.AUTO_READ, false);
+            //.option(ChannelOption.AUTO_READ, false);
         }
 
         public void Bind(final CountDownLatch latch) {
             boolean bindSuccess = false;
-            while(!bindSuccess){
-                try{
-                    logger.info("try to bind localhost: "+port);
+            while (!bindSuccess) {
+                try {
+                    logger.info("try to bind localhost: " + port);
 
                     ChannelFuture f = bootstrap.connect(host, port).sync();
                     channel = f.channel();
-                    bindSuccess=true;
+                    bindSuccess = true;
                     latch.countDown();
-                }catch (Exception ex){
-                    logger.error("binding to port "+port+" failed, try again after 50ms");
+                } catch (Exception ex) {
+                    logger.error("binding to port " + port + " failed, try again after 50ms");
                     try {
                         Thread.sleep(50);
-                    }catch (InterruptedException e){
+                    } catch (InterruptedException e) {
                         // swallow
                     }
                 }

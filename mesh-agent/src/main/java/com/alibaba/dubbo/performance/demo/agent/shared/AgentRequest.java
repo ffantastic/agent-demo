@@ -56,7 +56,13 @@ public class AgentRequest {
                     throw new RuntimeException("you are a bad boy: "+kv[1]);
                 }
             }else if("parameter".equals(kv[0])){
-                agentRequest.setP_parameter(kv[1]);
+                if(kv.length==2){
+                    agentRequest.setP_parameter(kv[1]);
+                }else{
+                    // handle special case like 'parameter='
+                    agentRequest.setP_parameter("");
+                }
+
             }else if("method".equals(kv[0])){
                 if(Special_Method.equals(kv[1])){
                     agentRequest.setP_methodCode(0x01);
