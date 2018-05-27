@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BackendManager {
     private Logger logger = LoggerFactory.getLogger(BackendManager.class);
 
-    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));// new LocalEtcdRegistry();//
+    private IRegistry registry =  new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();//
 
     private Map<String, BackendConnection> backendConnectionMap = new HashMap<>();
 
@@ -46,7 +46,10 @@ public class BackendManager {
             String endpointStr = ep.getHost() + ":" + ep.getPort();
             logger.info("BackendManager found and add host: " + endpointStr);
             this.loadBalancer.UpdateTTR(endpointStr, 0);
-            backendConnectionMap.put(endpointStr, new BackendConnection(ep.getHost(), ep.getPort(), eventloopGroup));
+            // for each provider agent, there are 4 tcp long connections with it.
+            BackendConnection backendConnection = new BackendConnection(ep.getHost(), ep.getPort(), 4);
+            backendConnection.Init(eventloopGroup,this);
+            backendConnectionMap.put(endpointStr, backendConnection);
         }
 
         CountDownLatch latch = new CountDownLatch(endpoints.size());
@@ -57,7 +60,7 @@ public class BackendManager {
             }).start();
         }
         try {
-            logger.info("wait for all {} connection to finish binding", endpoints.size());
+            logger.info("wait for all {} bootstrap to finish binding", endpoints.size());
             latch.await();
         } catch (InterruptedException exception) {
             exception.printStackTrace();
@@ -82,8 +85,10 @@ public class BackendManager {
         BackendConnection backend = backendConnectionMap.get(backendHostName);
         agentRequest.setForwardStartTime(System.currentTimeMillis());
         agentRequest.setRequestId(nextId);
-        backend.channel.writeAndFlush(agentRequest);
-        
+
+        // select a channel from a backend
+        backend.SelectChannel().writeAndFlush(agentRequest);
+
         return nextId;
     }
 
@@ -110,62 +115,4 @@ public class BackendManager {
             this.inboundChannel = channel;
         }
     }
-
-    private class BackendConnection {
-        private String host;
-        private int port;
-
-        Bootstrap bootstrap = new Bootstrap();
-        Channel channel;
-
-        public BackendConnection(String host, int port, EventLoopGroup eventloopGroup) {
-            this.host = host;
-            this.port = port;
-
-            this.Init(eventloopGroup);
-        }
-
-        public void Init(EventLoopGroup eventloopGroup) {
-            bootstrap = bootstrap.group(eventloopGroup)
-                    .channel(NioSocketChannel.class)
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            socketChannel.pipeline().addLast(
-                                    new AgentRequestEncoder(),
-                                    new AgentRequestDecoder("Consumer"),
-//                                    new ObjectEncoder(),
-//                                    new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
-                                    new ConsumerAgentBackendHandler(BackendManager.this));
-                        }
-                    })
-                    .option(ChannelOption.SO_KEEPALIVE, true)
-                    .option(ChannelOption.TCP_NODELAY, true)
-                    .option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
-            //.option(ChannelOption.AUTO_READ, false);
-        }
-
-        public void Bind(final CountDownLatch latch) {
-            boolean bindSuccess = false;
-            while (!bindSuccess) {
-                try {
-                    logger.info("try to bind localhost: " + port);
-
-                    ChannelFuture f = bootstrap.connect(host, port).sync();
-                    channel = f.channel();
-                    bindSuccess = true;
-                    latch.countDown();
-                } catch (Exception ex) {
-                    logger.error("binding to port " + port + " failed, try again after 50ms");
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        // swallow
-                    }
-                }
-            }
-
-        }
-    }
-
 }
