@@ -49,6 +49,7 @@ public class ConnecManager {
         final CountDownLatch latch =  new CountDownLatch(1);
         backendConnection.Bind(latch);
         latch.await();
+        
 
 //        bootstrap = new Bootstrap()
 //                .group(eventloopGroup)
