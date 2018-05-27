@@ -69,19 +69,24 @@ public class BackendManager {
 
     public Long ForwardToBackend(FullHttpRequest request, ChannelHandlerContext inboundChannel) {
         Long nextId = idGen.incrementAndGet();
-        // select a backend
-        String backendHostName = this.loadBalancer.GetHost();
-        // map next id to meta data about this forwarding, it is to be used for writing response back from backend
-        forwardingReq.put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
+        try {
+            // select a backend
+            String backendHostName = this.loadBalancer.GetHost();
+            // map next id to meta data about this forwarding, it is to be used for writing response back from backend
+            forwardingReq.put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
 
-        // protocol conversion
-        AgentRequest agentRequest = AgentRequest.BuildFromHttp(request);
+            // protocol conversion
+            AgentRequest agentRequest = AgentRequest.BuildFromHttp(request);
 
-        //forward request
-        BackendConnection backend = backendConnectionMap.get(backendHostName);
-        agentRequest.setForwardStartTime(System.currentTimeMillis());
-        agentRequest.setRequestId(nextId);
-        backend.channel.writeAndFlush(agentRequest);
+            //forward request
+            BackendConnection backend = backendConnectionMap.get(backendHostName);
+            agentRequest.setForwardStartTime(System.currentTimeMillis());
+            agentRequest.setRequestId(nextId);
+            backend.channel.writeAndFlush(agentRequest);
+        }catch (Throwable ex){
+            logger.error("exception caught in ForwardToBackend, re-throw.");
+            throw ex;
+        }
 
         return nextId;
     }

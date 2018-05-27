@@ -41,8 +41,7 @@ public class ConsumerAgentFrontendHandler extends SimpleChannelInboundHandler<Ob
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         //cause.printStackTrace();
-        logger.error("exception caught in frontend handler");
-        logger.error(cause.getMessage());
+        logger.error("exception caught in frontend handler",cause);
         Channel ch = ctx.channel();
         if (ch.isActive()) {
             ch.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
