@@ -44,7 +44,7 @@ public class ConnecManager {
     public void Init(EventLoopGroup eventloopGroup) throws Exception {
         logger.info("ConnecManager initialization start.");
         int port = Integer.valueOf(System.getProperty("dubbo.protocol.port"));
-        backendConnection = new BackendConnection("127.0.0.1",port,2);
+        backendConnection = new BackendConnection("127.0.0.1",port,1);
         backendConnection.Init(eventloopGroup,new RpcClientInitializer(this));
         final CountDownLatch latch =  new CountDownLatch(1);
         backendConnection.Bind(latch);
