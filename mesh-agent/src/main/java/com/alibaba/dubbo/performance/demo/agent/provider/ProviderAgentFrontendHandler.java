@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             super.channelActive(ctx);
-            if(conncMgr.SetInboundChannel(ctx.channel())){
+            if(conncMgr.SetInboundChannel(ctx)){
                 logger.info("ProviderAgentFrontendHandler successfully set channel to ConnectionManager");
             }
         }

@@ -1,5 +1,6 @@
 package com.alibaba.dubbo.performance.demo.agent.dubbo;
 
+import com.alibaba.dubbo.performance.demo.agent.consumer.BackendConnection;
 import com.alibaba.dubbo.performance.demo.agent.dubbo.model.*;
 import com.alibaba.dubbo.performance.demo.agent.registry.EtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
@@ -8,6 +9,7 @@ import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequest;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -18,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ConnecManager {
@@ -26,11 +29,12 @@ public class ConnecManager {
 
     private IRegistry registry =new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();//
 
-    private Bootstrap bootstrap;
+    //private Bootstrap bootstrap;
 
-    private Channel channel;
+    private BackendConnection backendConnection;
+    //private Channel channel;
 
-    private AtomicReference<Channel> inboundChannel = new AtomicReference<>(null);
+    private AtomicReference<ChannelHandlerContext> inboundChannel = new AtomicReference<>(null);
 
     private ConcurrentHashMap<Long, Long> upstreamMetaMap = new ConcurrentHashMap<>();
 
@@ -39,31 +43,37 @@ public class ConnecManager {
 
     public void Init(EventLoopGroup eventloopGroup) throws Exception {
         logger.info("ConnecManager initialization start.");
-
-        bootstrap = new Bootstrap()
-                .group(eventloopGroup)
-                .option(ChannelOption.SO_KEEPALIVE, true)
-                .option(ChannelOption.TCP_NODELAY, true)
-                .option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT)
-                .channel(NioSocketChannel.class)
-                .handler(new RpcClientInitializer(this));
-
         int port = Integer.valueOf(System.getProperty("dubbo.protocol.port"));
-        boolean bindSuccess = false;
-        while(!bindSuccess) {
-            logger.info("try to bind localhost: "+port);
-            try {
-                channel = bootstrap.connect("127.0.0.1", port).sync().channel();
-                bindSuccess=true;
-            }catch (Exception ex){
-                ex.printStackTrace();
-                logger.error("binding to port "+port+" failed, try again after 50ms");
-                Thread.sleep(50);
-            }
-        }
+        backendConnection = new BackendConnection("127.0.0.1",port,4);
+        backendConnection.Init(eventloopGroup,new RpcClientInitializer(this));
+        final CountDownLatch latch =  new CountDownLatch(1);
+        backendConnection.Bind(latch);
+        latch.await();
+
+//        bootstrap = new Bootstrap()
+//                .group(eventloopGroup)
+//                .option(ChannelOption.SO_KEEPALIVE, true)
+//                .option(ChannelOption.TCP_NODELAY, true)
+//                .option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT)
+//                .channel(NioSocketChannel.class)
+//                .handler(new RpcClientInitializer(this));
+//
+//
+//        boolean bindSuccess = false;
+//        while(!bindSuccess) {
+//            logger.info("try to bind localhost: "+port);
+//            try {
+//                channel = bootstrap.connect("127.0.0.1", port).sync().channel();
+//                bindSuccess=true;
+//            }catch (Exception ex){
+//                ex.printStackTrace();
+//                logger.error("binding to port "+port+" failed, try again after 50ms");
+//                Thread.sleep(50);
+//            }
+//        }
     }
 
-    public boolean SetInboundChannel(Channel inbound){
+    public boolean SetInboundChannel(ChannelHandlerContext inbound){
         return inboundChannel.compareAndSet(null,inbound);
     }
 
@@ -92,7 +102,7 @@ public class ConnecManager {
         logger.info("requestId=" + req.getId());
 
         upstreamMetaMap.put(req.getId(),request.getForwardStartTime());
-        channel.writeAndFlush(req);
+        backendConnection.SelectChannel().writeAndFlush(req);
     }
 
     public void FinishProviderForwardingAndWriteResponse(RpcResponse response) {

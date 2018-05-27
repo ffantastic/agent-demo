@@ -49,6 +49,16 @@ public class BackendConnection {
         //.option(ChannelOption.AUTO_READ, false);
     }
 
+    public void Init(EventLoopGroup eventloopGroup, ChannelInitializer<SocketChannel> channelInitializer){
+        bootstrap = bootstrap.group(eventloopGroup)
+                .channel(NioSocketChannel.class)
+                .handler(channelInitializer)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT);
+        //.option(ChannelOption.AUTO_READ, false);
+    }
+
     public void Bind(final CountDownLatch latch) {
         boolean bindSuccess = false;
         while (!bindSuccess) {
