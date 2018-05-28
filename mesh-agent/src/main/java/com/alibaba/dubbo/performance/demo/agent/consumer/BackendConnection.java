@@ -69,7 +69,7 @@ public class BackendConnection {
                 ChannelFuture f = bootstrap.connect(host, port).sync();
                 Channel ch = f.channel();
                 channels.add(ch);
-                MapChannel(ch);
+                //MapChannel(ch);
 
                 if (channels.size() >= channelNumber) {
                     bindSuccess = true;
@@ -107,10 +107,10 @@ public class BackendConnection {
     }
 
     public Channel SelectChannel(ChannelHandlerContext inbound) {
-        Channel reuslt = SelectChannelWithSameEventLoop(inbound.channel().eventLoop());
-        if (reuslt != null) {
-            return reuslt;
-        }
+//        Channel reuslt = SelectChannelWithSameEventLoop(inbound.channel().eventLoop());
+//        if (reuslt != null) {
+//            return reuslt;
+//        }
 
         int selectedChannelIndex = totalConnection.getAndIncrement() % channelNumber;
         // System.out.println("BackendConnection select channel No."+selectedChannelIndex);
@@ -123,7 +123,7 @@ public class BackendConnection {
             return null;
         }
 
-        logger.info("use channel from eventloop {} to forward",eventloop.hashCode());
+       // logger.info("use channel from eventloop {} to forward",eventloop.hashCode());
         return chs.get(channelIndexWithSameEventloop.nextInt(chs.size()));
     }
 }
