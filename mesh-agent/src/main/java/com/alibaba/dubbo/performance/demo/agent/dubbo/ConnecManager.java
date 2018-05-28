@@ -6,13 +6,8 @@ import com.alibaba.dubbo.performance.demo.agent.registry.EtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.LocalEtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequest;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +16,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
+
 
 public class ConnecManager {
 
@@ -34,9 +29,9 @@ public class ConnecManager {
     private BackendConnection backendConnection;
     //private Channel channel;
 
-    private AtomicReference<ChannelHandlerContext> inboundChannel = new AtomicReference<>(null);
+   // private AtomicReference<ChannelHandlerContext> inboundChannel = new AtomicReference<>(null);
 
-    private ConcurrentHashMap<Long, Long> upstreamMetaMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Long, UpstreamMetaInfo> upstreamMetaMap = new ConcurrentHashMap<>();
 
     public ConnecManager() {
     }
@@ -49,36 +44,13 @@ public class ConnecManager {
         final CountDownLatch latch =  new CountDownLatch(1);
         backendConnection.Bind(latch);
         latch.await();
-
-
-//        bootstrap = new Bootstrap()
-//                .group(eventloopGroup)
-//                .option(ChannelOption.SO_KEEPALIVE, true)
-//                .option(ChannelOption.TCP_NODELAY, true)
-//                .option(ChannelOption.ALLOCATOR, UnpooledByteBufAllocator.DEFAULT)
-//                .channel(NioSocketChannel.class)
-//                .handler(new RpcClientInitializer(this));
-//
-//
-//        boolean bindSuccess = false;
-//        while(!bindSuccess) {
-//            logger.info("try to bind localhost: "+port);
-//            try {
-//                channel = bootstrap.connect("127.0.0.1", port).sync().channel();
-//                bindSuccess=true;
-//            }catch (Exception ex){
-//                ex.printStackTrace();
-//                logger.error("binding to port "+port+" failed, try again after 50ms");
-//                Thread.sleep(50);
-//            }
-//        }
     }
 
-    public boolean SetInboundChannel(ChannelHandlerContext inbound){
-        return inboundChannel.compareAndSet(null,inbound);
-    }
+//    public boolean SetInboundChannel(ChannelHandlerContext inbound){
+//        return inboundChannel.compareAndSet(null,inbound);
+//    }
 
-    public void ForwardToProvider(AgentRequest request){
+    public void ForwardToProvider(AgentRequest request,ChannelHandlerContext inbound){
         RpcInvocation invocation = new RpcInvocation();
         invocation.setMethodName(AgentRequest.CodeToMethod(request.getP_methodCode()));
         invocation.setAttachment("path", AgentRequest.CodeToInterface(request.getP_interfaceCode()));
@@ -102,13 +74,13 @@ public class ConnecManager {
 
         logger.info("requestId=" + req.getId());
 
-        upstreamMetaMap.put(req.getId(),request.getForwardStartTime());
-        backendConnection.SelectChannel().writeAndFlush(req);
+        upstreamMetaMap.put(req.getId(),new UpstreamMetaInfo(request.getForwardStartTime(),inbound));
+        backendConnection.SelectChannel(inbound).writeAndFlush(req);
     }
 
     public void FinishProviderForwardingAndWriteResponse(RpcResponse response) {
         long requestId = Long.parseLong(response.getRequestId());
-        Long metaInfo = this.upstreamMetaMap.get(requestId);
+        UpstreamMetaInfo metaInfo = this.upstreamMetaMap.get(requestId);
         if (metaInfo == null) {
             logger.error("Forward meta information is lost!!! request id: " + requestId);
             return;
@@ -117,9 +89,19 @@ public class ConnecManager {
         this.upstreamMetaMap.remove(requestId);
 
         AgentRequest agent = AgentRequest.FromDubbo(response);
-        agent.setForwardStartTime(metaInfo);
+        agent.setForwardStartTime(metaInfo.ForwardStartTime);
 
-        inboundChannel.get().writeAndFlush(agent);
+        metaInfo.InboundChannel.writeAndFlush(agent);
+    }
+
+    public static class UpstreamMetaInfo{
+        Long ForwardStartTime;
+        ChannelHandlerContext InboundChannel;
+
+        public UpstreamMetaInfo(Long forwardStartTime,ChannelHandlerContext inboundChannel){
+            this.ForwardStartTime = forwardStartTime;
+            this.InboundChannel = inboundChannel;
+        }
     }
 
 }

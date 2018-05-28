@@ -16,13 +16,13 @@ import org.slf4j.LoggerFactory;
             System.out.println("ProviderAgentFrontendHandler constructor");
         }
 
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            super.channelActive(ctx);
-            if(conncMgr.SetInboundChannel(ctx)){
-                logger.info("ProviderAgentFrontendHandler successfully set channel to ConnectionManager");
-            }
-        }
+//        @Override
+//        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+//            super.channelActive(ctx);
+//            if(conncMgr.SetInboundChannel(ctx)){
+//                logger.info("ProviderAgentFrontendHandler successfully set channel to ConnectionManager");
+//            }
+//        }
 
         @Override
         protected void channelRead0(ChannelHandlerContext channelHandlerContext, AgentRequest agentRequest) throws Exception {
@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 //            System.out.println("method:"+agentRequest.getP_method());
 //            System.out.println("parameterTypesString:"+agentRequest.getP_parameterTypesString());
 
-            this.conncMgr.ForwardToProvider(agentRequest);
+            this.conncMgr.ForwardToProvider(agentRequest,channelHandlerContext);
         }
 
         @Override

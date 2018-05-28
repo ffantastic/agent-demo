@@ -10,8 +10,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,7 +22,9 @@ public class BackendConnection {
     private Bootstrap bootstrap = new Bootstrap();
     private int channelNumber;
     private List<Channel> channels = new ArrayList<>();
+    private Map<EventLoop, List<Channel>> channelMaps = new HashMap<>();
     private AtomicInteger totalConnection = new AtomicInteger(0);
+    private Random channelIndexWithSameEventloop = new Random();
 
     public BackendConnection(String host, int port, int channelNumber) {
         this.host = host;
@@ -49,7 +50,7 @@ public class BackendConnection {
         //.option(ChannelOption.AUTO_READ, false);
     }
 
-    public void Init(EventLoopGroup eventloopGroup, ChannelInitializer<SocketChannel> channelInitializer){
+    public void Init(EventLoopGroup eventloopGroup, ChannelInitializer<SocketChannel> channelInitializer) {
         bootstrap = bootstrap.group(eventloopGroup)
                 .channel(NioSocketChannel.class)
                 .handler(channelInitializer)
@@ -68,12 +69,15 @@ public class BackendConnection {
                 ChannelFuture f = bootstrap.connect(host, port).sync();
                 Channel ch = f.channel();
                 channels.add(ch);
+                MapChannel(ch);
+
                 if (channels.size() >= channelNumber) {
                     bindSuccess = true;
+                    PrintChannelMap();
                     latch.countDown();
                 }
             } catch (Exception ex) {
-                logger.error("binding to {}:{} failed, try again after 50ms",host,port);
+                logger.error("binding to {}:{} failed, try again after 50ms", host, port);
                 try {
                     Thread.sleep(30);
                 } catch (InterruptedException e) {
@@ -84,9 +88,42 @@ public class BackendConnection {
 
     }
 
-    public Channel SelectChannel() {
+    private void MapChannel(Channel ch) {
+        EventLoop eventLoop = ch.eventLoop();
+        List<Channel> chs = this.channelMaps.get(eventLoop);
+        if (chs == null) {
+            chs = new ArrayList<>();
+            this.channelMaps.put(eventLoop, chs);
+        }
+
+        chs.add(ch);
+    }
+
+    private void PrintChannelMap() {
+        logger.info("{} channela are mapped to {} eventloop", channels.size(), channelMaps.size());
+        for (Map.Entry<EventLoop, List<Channel>> pair : channelMaps.entrySet()) {
+            logger.info("Eventloop [{}] has {} channel", pair.getKey().hashCode(), pair.getValue().size());
+        }
+    }
+
+    public Channel SelectChannel(ChannelHandlerContext inbound) {
+        Channel reuslt = SelectChannelWithSameEventLoop(inbound.channel().eventLoop());
+        if (reuslt != null) {
+            return reuslt;
+        }
+
         int selectedChannelIndex = totalConnection.getAndIncrement() % channelNumber;
         // System.out.println("BackendConnection select channel No."+selectedChannelIndex);
         return this.channels.get(selectedChannelIndex);
+    }
+
+    private Channel SelectChannelWithSameEventLoop(EventLoop eventloop) {
+        List<Channel> chs = channelMaps.get(eventloop);
+        if (chs == null) {
+            return null;
+        }
+
+        logger.info("use channel from eventloop {} to forward",eventloop.hashCode());
+        return chs.get(channelIndexWithSameEventloop.nextInt(chs.size()));
     }
 }

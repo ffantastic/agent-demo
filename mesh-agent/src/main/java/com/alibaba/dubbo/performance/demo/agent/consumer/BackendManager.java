@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BackendManager {
     private Logger logger = LoggerFactory.getLogger(BackendManager.class);
 
-    private IRegistry registry =  new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();//
+    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));// new LocalEtcdRegistry();//
 
     private Map<String, BackendConnection> backendConnectionMap = new HashMap<>();
 
@@ -47,7 +47,7 @@ public class BackendManager {
             logger.info("BackendManager found and add host: " + endpointStr);
             this.loadBalancer.UpdateTTR(endpointStr, 0);
             // for each provider agent, there are 4 tcp long connections with it.
-            BackendConnection backendConnection = new BackendConnection(ep.getHost(), ep.getPort(), 10);
+            BackendConnection backendConnection = new BackendConnection(ep.getHost(), ep.getPort(), 4);
             backendConnection.Init(eventloopGroup,this);
             backendConnectionMap.put(endpointStr, backendConnection);
         }
@@ -87,7 +87,7 @@ public class BackendManager {
         agentRequest.setRequestId(nextId);
 
         // select a channel from a backend
-        backend.SelectChannel().writeAndFlush(agentRequest);
+        backend.SelectChannel(inboundChannel).writeAndFlush(agentRequest);
 
         return nextId;
     }
