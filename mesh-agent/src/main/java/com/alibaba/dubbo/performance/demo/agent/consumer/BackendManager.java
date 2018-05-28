@@ -71,7 +71,7 @@ public class BackendManager {
 
         Long nextId = idGen.incrementAndGet();
         // select a backend
-        String backendHostName = this.loadBalancer.GetHost();
+        String backendHostName = this.loadBalancer.GetRandomHost();
         // map next id to meta data about this forwarding, it is to be used for writing response back from backend
         forwardingReq.put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
 

@@ -60,13 +60,13 @@ public class LocalLoadBalancer {
         String key_maxCap= keys.get(0);
         ThroughTimeRecord val_maxCap = ttrMap.get(key_maxCap);
         long maxCap = val_maxCap.EstimateCapacitry();
-        StringBuilder debug = new StringBuilder(keys.get(0)+":"+val_maxCap);
+        //StringBuilder debug = new StringBuilder(keys.get(0)+":"+val_maxCap);
 
         for(int i=1;i<keys.size();i++){
             String key_record =  keys.get(i);
             ThroughTimeRecord val_record = ttrMap.get(key_record);
             long cap =  val_record.EstimateCapacitry();
-            debug.append(","+keys.get(i)+":"+val_record);
+            //debug.append(","+keys.get(i)+":"+val_record);
             if(cap>maxCap){
                 maxCap = cap;
                 key_maxCap = key_record;
@@ -76,16 +76,24 @@ public class LocalLoadBalancer {
 
         // p = 0.7 to use host with min through time;
         if(random.nextInt(10)<=6){
-            debug.append(", win:"+key_maxCap);
-            logger.info(debug.toString());
+            //debug.append(", win:"+key_maxCap);
+           // logger.info(debug.toString());
             val_maxCap.Connect();
             return key_maxCap;
         }
 
         int selectedIndex = random.nextInt(keys.size());
-        debug.append(", win:"+keys.get(selectedIndex));
+       // debug.append(", win:"+keys.get(selectedIndex));
         ttrMap.get(keys.get(selectedIndex)).Connect();
-        logger.info(debug.toString());
+       // logger.info(debug.toString());
         return keys.get(selectedIndex);
+    }
+
+    public String GetRandomHost(){
+        if(keys.size() == 0){
+            return null;
+        }
+
+        return keys.get(random.nextInt(keys.size()));
     }
 }
