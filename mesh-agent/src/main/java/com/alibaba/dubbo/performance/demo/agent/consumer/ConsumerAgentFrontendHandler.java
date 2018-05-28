@@ -1,6 +1,5 @@
 package com.alibaba.dubbo.performance.demo.agent.consumer;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
@@ -17,6 +16,7 @@ import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
+@ChannelHandler.Sharable
 public class ConsumerAgentFrontendHandler extends SimpleChannelInboundHandler<Object>  {
 
     private Logger logger = LoggerFactory.getLogger(ConsumerAgentFrontendHandler.class);
