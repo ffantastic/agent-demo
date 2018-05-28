@@ -20,13 +20,21 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BackendManager {
     private Logger logger = LoggerFactory.getLogger(BackendManager.class);
 
-    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));// new LocalEtcdRegistry();//
+    private IRegistry registry =  new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();//
 
     private Map<String, BackendConnection> backendConnectionMap = new HashMap<>();
 
     private AtomicLong idGen = new AtomicLong(0);
 
-    private ConcurrentHashMap<Long, ForwardMetaInfo> forwardingReq = new ConcurrentHashMap<>();
+    private ThreadLocal<Map<Long,ForwardMetaInfo>> localForwardingReq  = new ThreadLocal<Map<Long,ForwardMetaInfo>>(){
+
+        @Override
+        protected Map<Long, ForwardMetaInfo> initialValue() {
+            return new HashMap<>();
+        }
+    };
+
+   // private ConcurrentHashMap<Long, ForwardMetaInfo> forwardingReq = new ConcurrentHashMap<>();
 
     private LocalLoadBalancer loadBalancer;
 
@@ -73,7 +81,7 @@ public class BackendManager {
         // select a backend
         String backendHostName = this.loadBalancer.GetRandomHost();
         // map next id to meta data about this forwarding, it is to be used for writing response back from backend
-        forwardingReq.put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
+        localForwardingReq.get().put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
 
         //forward request
         BackendConnection backend = backendConnectionMap.get(backendHostName);
@@ -87,14 +95,15 @@ public class BackendManager {
     }
 
     public ForwardMetaInfo FinishBackendForwarding(Long requestId, long throughtTime) {
-        ForwardMetaInfo metaInfo = this.forwardingReq.get(requestId);
+        Map<Long,ForwardMetaInfo> forwardingReq = localForwardingReq.get();
+        ForwardMetaInfo metaInfo = forwardingReq.get(requestId);
         if (metaInfo == null) {
             logger.error("Forward meta information is lost!!! request id: " + requestId);
             return null;
         }
 
         this.loadBalancer.UpdateTTR(metaInfo.forwardHost, throughtTime);
-        this.forwardingReq.remove(requestId);
+        forwardingReq.remove(requestId);
 
         return metaInfo;
     }
