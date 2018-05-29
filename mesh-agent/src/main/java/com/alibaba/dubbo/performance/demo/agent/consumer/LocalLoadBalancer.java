@@ -74,8 +74,8 @@ public class LocalLoadBalancer {
             }
         }
 
-        // p = 0.7 to use host with min through time;
-        if(random.nextInt(10)<=6){
+        // p = 0.9 to use host with min through time;
+        if(random.nextInt(10)<=8){
             //debug.append(", win:"+key_maxCap);
            // logger.info(debug.toString());
             val_maxCap.Connect();

@@ -76,7 +76,7 @@ public class BackendManager {
         agentRequest.setRequestId(nextId);
 
         // select a backend
-        String backendHostName = this.loadBalancer.GetRandomHost();
+        String backendHostName = this.loadBalancer.GetHost();//this.loadBalancer.GetRandomHost();
 
         //select a channel from a backend
         BackendConnection backend = backendConnectionMap.get(backendHostName);
