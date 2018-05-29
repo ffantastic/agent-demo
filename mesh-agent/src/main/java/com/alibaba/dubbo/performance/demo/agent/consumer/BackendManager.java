@@ -34,7 +34,7 @@ public class BackendManager {
         }
     };
 
-   // private ConcurrentHashMap<Long, ForwardMetaInfo> forwardingReq = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Long, ForwardMetaInfo> forwardingReq = new ConcurrentHashMap<>();
 
     private LocalLoadBalancer loadBalancer;
 
@@ -78,32 +78,48 @@ public class BackendManager {
         AgentRequest agentRequest = AgentRequest.BuildFromHttp(request);
 
         Long nextId = idGen.incrementAndGet();
-        // select a backend
-        String backendHostName = this.loadBalancer.GetRandomHost();
-        // map next id to meta data about this forwarding, it is to be used for writing response back from backend
-        localForwardingReq.get().put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
-
-        //forward request
-        BackendConnection backend = backendConnectionMap.get(backendHostName);
         agentRequest.setForwardStartTime(System.currentTimeMillis());
         agentRequest.setRequestId(nextId);
 
-        // select a channel from a backend
-        backend.SelectChannel(inboundChannel).writeAndFlush(agentRequest);
+        // select a backend
+        String backendHostName = this.loadBalancer.GetRandomHost();
+
+        //select a channel from a backend
+        BackendConnection backend = backendConnectionMap.get(backendHostName);
+        Channel outboundChannel = backend.SelectChannel(inboundChannel);
+
+        if(outboundChannel.eventLoop() == inboundChannel.channel().eventLoop()){
+            // map next id to meta data about this forwarding, it is to be used for writing response back from backend
+            localForwardingReq.get().put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
+        }else{
+            forwardingReq.put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
+        }
+
+        outboundChannel.writeAndFlush(agentRequest);
 
         return nextId;
     }
 
     public ForwardMetaInfo FinishBackendForwarding(Long requestId, long throughtTime) {
-        Map<Long,ForwardMetaInfo> forwardingReq = localForwardingReq.get();
-        ForwardMetaInfo metaInfo = forwardingReq.get(requestId);
+        boolean isFromLocalCache = true;
+        Map<Long,ForwardMetaInfo> localCache = localForwardingReq.get();
+        ForwardMetaInfo metaInfo = localCache.get(requestId);
         if (metaInfo == null) {
-            logger.error("Forward meta information is lost!!! request id: " + requestId);
-            return null;
+            metaInfo = forwardingReq.get(requestId);
+            if(metaInfo == null) {
+                logger.error("Forward meta information is lost!!! request id: " + requestId);
+                return null;
+            }
+
+            isFromLocalCache=false;
         }
 
         this.loadBalancer.UpdateTTR(metaInfo.forwardHost, throughtTime);
-        forwardingReq.remove(requestId);
+        if(isFromLocalCache){
+            localCache.remove(requestId);
+        }else{
+            forwardingReq.remove(requestId);
+        }
 
         return metaInfo;
     }
