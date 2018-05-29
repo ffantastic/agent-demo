@@ -5,6 +5,8 @@ import com.alibaba.dubbo.performance.demo.agent.registry.EtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.IRegistry;
 import com.alibaba.dubbo.performance.demo.agent.registry.LocalEtcdRegistry;
 import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequest;
+import com.alibaba.dubbo.performance.demo.agent.shared.BackendConnection;
+import com.alibaba.dubbo.performance.demo.agent.shared.RequestCache;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.FullHttpRequest;
 import org.slf4j.Logger;
@@ -26,15 +28,7 @@ public class BackendManager {
 
     private AtomicLong idGen = new AtomicLong(0);
 
-    private ThreadLocal<Map<Long,ForwardMetaInfo>> localForwardingReq  = new ThreadLocal<Map<Long,ForwardMetaInfo>>(){
-
-        @Override
-        protected Map<Long, ForwardMetaInfo> initialValue() {
-            return new HashMap<>();
-        }
-    };
-
-    private ConcurrentHashMap<Long, ForwardMetaInfo> forwardingReq = new ConcurrentHashMap<>();
+    private RequestCache<ForwardMetaInfo> forwardRequestCache = new RequestCache<>();
 
     private LocalLoadBalancer loadBalancer;
 
@@ -88,12 +82,8 @@ public class BackendManager {
         BackendConnection backend = backendConnectionMap.get(backendHostName);
         Channel outboundChannel = backend.SelectChannel(inboundChannel);
 
-        if(outboundChannel.eventLoop() == inboundChannel.channel().eventLoop()){
-            // map next id to meta data about this forwarding, it is to be used for writing response back from backend
-            localForwardingReq.get().put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
-        }else{
-            forwardingReq.put(nextId, new ForwardMetaInfo(backendHostName, inboundChannel));
-        }
+        // map next id to meta data about this forwarding, it is to be used for writing response back from backend
+        forwardRequestCache.Cache(nextId,new ForwardMetaInfo(backendHostName, inboundChannel),outboundChannel.eventLoop() == inboundChannel.channel().eventLoop() );
 
         outboundChannel.writeAndFlush(agentRequest);
 
@@ -101,26 +91,15 @@ public class BackendManager {
     }
 
     public ForwardMetaInfo FinishBackendForwarding(Long requestId, long throughtTime) {
-        boolean isFromLocalCache = true;
-        Map<Long,ForwardMetaInfo> localCache = localForwardingReq.get();
-        ForwardMetaInfo metaInfo = localCache.get(requestId);
-        if (metaInfo == null) {
-            metaInfo = forwardingReq.get(requestId);
-            if(metaInfo == null) {
-                logger.error("Forward meta information is lost!!! request id: " + requestId);
-                return null;
-            }
-
-            isFromLocalCache=false;
+        ForwardMetaInfo metaInfo = null;
+        try{
+            metaInfo = forwardRequestCache.Remove(requestId);
+        }catch (Exception ex){
+            logger.error("Forward meta information is lost!!! request id:{} ", requestId,ex);
+            return null;
         }
 
         this.loadBalancer.UpdateTTR(metaInfo.forwardHost, throughtTime);
-        if(isFromLocalCache){
-            localCache.remove(requestId);
-        }else{
-            forwardingReq.remove(requestId);
-        }
-
         return metaInfo;
     }
 

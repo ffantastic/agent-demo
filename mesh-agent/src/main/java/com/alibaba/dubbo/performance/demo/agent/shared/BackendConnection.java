@@ -1,7 +1,7 @@
-package com.alibaba.dubbo.performance.demo.agent.consumer;
+package com.alibaba.dubbo.performance.demo.agent.shared;
 
-import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequestDecoder;
-import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequestEncoder;
+import com.alibaba.dubbo.performance.demo.agent.consumer.BackendManager;
+import com.alibaba.dubbo.performance.demo.agent.consumer.ConsumerAgentBackendHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.*;
