@@ -82,6 +82,7 @@ public class AgentRequestFastDecoder extends ByteToMessageDecoder {
         if (readable < tt) {
             return AgentRequestFastDecoder.DecodeResult.NEED_MORE_INPUT;
         }
+
         int decodeEndIndex = byteBuf.readerIndex()+len;
 
         AgentRequest agentRequest = new AgentRequest();

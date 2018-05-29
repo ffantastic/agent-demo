@@ -38,7 +38,7 @@ public class ConsumerAgentServer {
                         protected void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new HttpResponseEncoder());
                             ch.pipeline().addLast(new HttpRequestDecoder());
-                            ch.pipeline().addLast("aggegator", new HttpObjectAggregator(512 * 1024));
+                            ch.pipeline().addLast("aggegator", new HttpObjectAggregator(56 * 1024));
                             //TODO cache ConsumerAgentFrontendHandler ?
                             ch.pipeline().addLast(new ConsumerAgentFrontendHandler(bm));
                         }
