@@ -48,7 +48,11 @@ public class AgentRequestFastEncoder extends MessageToByteEncoder {
 
         if(req.IsRequest){
             // req.getHttpContent() is then called release() automatically
-            buffer.writeBytes(req.getHttpContent());
+            byte[] content = new byte[req.getHttpContent().readableBytes()];
+            req.getHttpContent().readBytes(content);
+            System.out.println(req.getRequestId()+":"+Bytes.byteArrayToHex(content));
+            // buffer.writeBytes(req.getHttpContent());
+            buffer.writeBytes(content);
         }else{
             buffer.writeInt(req.getResult());
         }

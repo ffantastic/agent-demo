@@ -3,6 +3,7 @@ package com.alibaba.dubbo.performance.demo.agent.shared;
 import com.alibaba.dubbo.performance.demo.agent.dubbo.model.Bytes;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
@@ -71,6 +72,10 @@ public class AgentRequestFastDecoder extends ByteToMessageDecoder {
 //        magic[1]=header[1];
 //        System.out.println("MAGIC NUMBER\t"+type+" : "+Bytes.byteArrayToHex(magic));
 
+        if(header[0] != (byte) 0xaf || header[1] != (byte)0x99){
+            System.out.println("!!!Wrong Magic!!!");
+        }
+
         byte[] dataLen = Arrays.copyOfRange(header, 11, 15);
         int len = Bytes.bytes2int(dataLen);
         int tt = len + HEADER_LENGTH;
@@ -90,7 +95,11 @@ public class AgentRequestFastDecoder extends ByteToMessageDecoder {
 
         if (agentRequest.IsRequest) {
             // slice-produced bytebuf doesn't need to be released.
-            agentRequest.setHttpContent(byteBuf.slice(byteBuf.readerIndex(),len-8));
+            byte[] bb = new byte[len-8];
+           byteBuf.readBytes(bb);
+            System.out.println(agentRequest.getRequestId() + ":"+Bytes.byteArrayToHex(bb));
+            //agentRequest.setHttpContent( byteBuf.slice(byteBuf.readerIndex(),len-8));
+            agentRequest.setHttpContent(Unpooled.wrappedBuffer(bb));
             agentRequest.DecodeHttpContent();
             byteBuf.readerIndex(decodeEndIndex);
         } else {
