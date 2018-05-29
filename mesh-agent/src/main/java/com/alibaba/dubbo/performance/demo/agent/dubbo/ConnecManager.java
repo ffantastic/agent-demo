@@ -64,7 +64,7 @@ public class ConnecManager {
         req.setData(invocation);
         req.setId(request.getRequestId());
 
-        logger.info("requestId=" + req.getId());
+        // logger.info("requestId=" + req.getId());
 
         Channel outboundChannel =  backendConnection.SelectChannel(inbound);
         upstreamRequestCache.Cache(req.getId(),new UpstreamMetaInfo(request.getForwardStartTime(),inbound),inbound.channel().eventLoop() == outboundChannel.eventLoop());

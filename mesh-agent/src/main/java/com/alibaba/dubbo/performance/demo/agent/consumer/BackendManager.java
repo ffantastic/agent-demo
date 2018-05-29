@@ -99,7 +99,7 @@ public class BackendManager {
             return null;
         }
 
-        this.loadBalancer.UpdateTTR(metaInfo.forwardHost, throughtTime);
+        //this.loadBalancer.UpdateTTR(metaInfo.forwardHost, throughtTime);
         return metaInfo;
     }
 
