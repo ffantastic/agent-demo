@@ -39,8 +39,8 @@ public class ProviderAgentServer {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new AgentRequestFastDecoder("provider"));
-                            ch.pipeline().addLast(new AgentRequestFastEncoder("provider"));
+                            ch.pipeline().addLast(new AgentRequestDecoder("provider"));
+                            ch.pipeline().addLast(new AgentRequestEncoder());
                             //TODO cache ProviderAgentFrontendHandler ?
                             ch.pipeline().addLast(new ProviderAgentFrontendHandler(connecManager));
                         }

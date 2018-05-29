@@ -33,8 +33,9 @@ public class AgentRequest {
         agentRequest.IsRequest = true;
 
         agentRequest.setHttpContent(request.content());
+        agentRequest.DecodeHttpContent();
 
-        // because there are 3 provider-agent but only 1 consumer-agent,
+        // TODO because there are 3 provider-agent but only 1 consumer-agent,
         // meaning that this 1 consumer-agent is easier to reach its cap bottleneck.
         // so the decode task is removed from consumer-agent to provider-agent trying to use zero-copy on consumer-agent,
         // agentRequest.DecodeHttpContent();
