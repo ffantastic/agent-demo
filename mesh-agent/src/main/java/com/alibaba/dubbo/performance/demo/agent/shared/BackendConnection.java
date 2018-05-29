@@ -39,8 +39,8 @@ public class BackendConnection {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline().addLast(
-                                new AgentRequestEncoder(),
-                                new AgentRequestDecoder("Consumer"),
+                                new AgentRequestFastEncoder("Consumer"),
+                                new AgentRequestFastDecoder("Consumer"),
                                 new ConsumerAgentBackendHandler(backendManager));
                     }
                 })
