@@ -142,7 +142,7 @@ public class AgentRequest {
                     throw new RuntimeException("you are a bad boy: " + kv[1]);
                 }
             } else {
-                throw new RuntimeException("AgentRequest conversion from HttpRequest is failed, unknown parameter: " + kv[0]);
+                throw new RuntimeException(this.requestId+" AgentRequest conversion from HttpRequest is failed, unknown parameter: " + kv[0]);
             }
         }
     }
