@@ -15,56 +15,43 @@ public class AgentRequestFastEncoder extends MessageToByteEncoder {
     protected static final int HEADER_LENGTH = 15;
     // magic header.
     protected static final short MAGIC = (short) 0xaf99;
-
-    String type ;
-    public AgentRequestFastEncoder(String type){
-        this.type=type;
-        System.out.println("AgentRequestFastEncoder"+type);
-    }
-
     @Override
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf buffer) throws Exception {
-        // System.out.println(type+" encode................");
+        //System.out.println("encode................");
         AgentRequest req = (AgentRequest)msg;
 
-        // header.
-        byte[] header = new byte[HEADER_LENGTH];
-
-        // set magic number.
-        Bytes.short2bytes(MAGIC, header);
-
-        // set request id.
-        Bytes.long2bytes(req.getRequestId(), header, 2);
-        if(req.IsRequest) {
-            header[10] = 0x0f;
-        }
-
-        // encode request data.
-        int savedWriteIndex = buffer.writerIndex();
-        buffer.writerIndex(savedWriteIndex + HEADER_LENGTH);
-
-        int bodyStartIndex = buffer.writerIndex();
-        buffer.writeLong(req.getForwardStartTime());
-
+        buffer.writeShort(MAGIC);
+        buffer.writeLong(req.getRequestId());
         if(req.IsRequest){
-            // req.getHttpContent() is then called release() automatically
-            byte[] content = new byte[req.getHttpContent().readableBytes()];
-            req.getHttpContent().readBytes(content);
-            System.out.println(req.getRequestId()+":"+Bytes.byteArrayToHex(content));
-            // buffer.writeBytes(req.getHttpContent());
-            buffer.writeBytes(content);
+            buffer.writeByte(0x0f);
         }else{
-            buffer.writeInt(req.getResult());
+            buffer.writeByte(0);
         }
 
-        int len = buffer.writerIndex()-bodyStartIndex;
-        // System.out.println("encode byte length "+len);
-        Bytes.int2bytes(len, header, 11);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        encodeRequestData(bos, req);
 
-        // write
-        buffer.writerIndex(savedWriteIndex);
-        buffer.writeBytes(header); // write header.
-        buffer.writerIndex(savedWriteIndex + HEADER_LENGTH + len);
+        int len = bos.size();
 
+        buffer.writeInt(len);
+        buffer.writeBytes(bos.toByteArray());
+    }
+
+    public void encodeRequestData(OutputStream out, AgentRequest data) throws Exception {
+
+        PrintWriter writer = new PrintWriter(new OutputStreamWriter(out));
+        writer.println(data.getForwardStartTime());
+        //writer.println(data.isKeepAlive());
+
+        if(data.IsRequest){
+            writer.println(data.getP_interfaceCode());
+            writer.println(data.getP_parameterTypesStringCode());
+            writer.println(data.getP_parameter());
+            writer.println(data.getP_methodCode());
+        }else{
+            writer.println(data.getResult());
+        }
+
+        writer.flush();
     }
 }
