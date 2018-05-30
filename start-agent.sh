@@ -5,12 +5,15 @@ ETCD_PORT=2379
 ETCD_URL=http://$ETCD_HOST:$ETCD_PORT
 
 echo ETCD_URL = $ETCD_URL
+mpstat 1 > /root/logs/mpstat.log &
 
 if [[ "$1" == "consumer" ]]; then
   echo "Starting consumer agent..."
   java -jar \
        -Xms1536M \
        -Xmx1536M \
+       -Xloggc:/root/logs/consumer_gc.log
+       -XX:+PrintGCDetails
        -Dtype=consumer \
        -Dserver.port=20000 \
        -Detcd.url=$ETCD_URL \
