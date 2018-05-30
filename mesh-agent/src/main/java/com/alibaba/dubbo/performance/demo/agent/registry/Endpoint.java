@@ -3,10 +3,12 @@ package com.alibaba.dubbo.performance.demo.agent.registry;
 public class Endpoint {
     private final String host;
     private final int port;
+    private final int weight;
 
-    public Endpoint(String host,int port){
+    public Endpoint(String host,int port,int weight){
         this.host = host;
         this.port = port;
+        this.weight = weight;
     }
 
     public String getHost() {
@@ -18,7 +20,7 @@ public class Endpoint {
     }
 
     public String toString(){
-        return host + ":" + port;
+        return host + ":" + port+":"+weight;
     }
 
     public boolean equals(Object o){
@@ -31,5 +33,9 @@ public class Endpoint {
 
     public int hashCode(){
         return host.hashCode() + port;
+    }
+
+    public int getWeight() {
+        return weight;
     }
 }

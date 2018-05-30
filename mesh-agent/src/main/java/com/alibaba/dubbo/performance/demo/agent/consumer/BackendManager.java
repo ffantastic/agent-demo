@@ -30,18 +30,22 @@ public class BackendManager {
 
     private RequestCache<ForwardMetaInfo> forwardRequestCache = new RequestCache<>();
 
-    private LocalLoadBalancer loadBalancer;
+   // private LocalLoadBalancer loadBalancer;
+
+    private WeightLoadBalancer loadBalancer;
 
     public void Init(EventLoopGroup eventloopGroup) throws Exception {
         logger.info("BackendManager initialization start.");
 
-        this.loadBalancer = LocalLoadBalancer.GetInstance();
+       // this.loadBalancer = LocalLoadBalancer.GetInstance();
 
         List<Endpoint> endpoints = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService");
+        this.loadBalancer = new WeightLoadBalancer(endpoints);
+
         for (Endpoint ep : endpoints) {
             String endpointStr = ep.getHost() + ":" + ep.getPort();
             logger.info("BackendManager found and add host: " + endpointStr);
-            this.loadBalancer.UpdateTTR(endpointStr, 0);
+            // this.loadBalancer.UpdateTTR(endpointStr, 0);
             // for each provider agent, there are 4 tcp long connections with it.
             BackendConnection backendConnection = new BackendConnection(ep.getHost(), ep.getPort(), 6);
             backendConnection.Init(eventloopGroup,this);
@@ -76,7 +80,7 @@ public class BackendManager {
         agentRequest.setRequestId(nextId);
 
         // select a backend
-        String backendHostName = this.loadBalancer.GetRandomHost();//this.loadBalancer.GetHost();//
+        String backendHostName = this.loadBalancer.GetHost();//this.loadBalancer.GetHost();//
 
         //select a channel from a backend
         BackendConnection backend = backendConnectionMap.get(backendHostName);
