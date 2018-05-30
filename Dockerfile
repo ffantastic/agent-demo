@@ -16,6 +16,9 @@ COPY --from=builder /root/workspace/agent/mesh-agent/target/mesh-agent-1.0-SNAPS
 COPY --from=builder /usr/local/bin/docker-entrypoint.sh /usr/local/bin
 COPY start-agent.sh /usr/local/bin
 
+# install cpu analysis tool
+RUN apt-get update && apt-get install -y sysstat
+
 RUN set -ex \
  && chmod a+x /usr/local/bin/start-agent.sh \
  && mkdir -p /root/logs
