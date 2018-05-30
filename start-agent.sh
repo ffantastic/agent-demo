@@ -12,8 +12,8 @@ if [[ "$1" == "consumer" ]]; then
   java -jar \
        -Xms1536M \
        -Xmx1536M \
-       -Xloggc:/root/logs/consumer_gc.log
-       -XX:+PrintGCDetails
+       -Xloggc:/root/logs/consumer_gc.log \
+       -XX:+PrintGCDetails \
        -Dtype=consumer \
        -Dserver.port=20000 \
        -Detcd.url=$ETCD_URL \
