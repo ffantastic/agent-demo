@@ -12,7 +12,7 @@ if [[ "$1" == "consumer" ]]; then
   java -jar \
        -Xms1536M \
        -Xmx1536M \
-       -Xloggc:/root/logs/consumer_gc.log \
+       -Xloggc:/root/logs/gc.log \
        -XX:+PrintGCDetails \
        -Dtype=consumer \
        -Dserver.port=20000 \
@@ -24,6 +24,8 @@ elif [[ "$1" == "provider-small" ]]; then
   java -jar \
        -Xms512M \
        -Xmx512M \
+       -Xloggc:/root/logs/gc.log \
+       -XX:+PrintGCDetails \
        -Dtype=provider \
        -Ddubbo.protocol.port=20880 \
        -Dserver.port=30000 \
@@ -35,6 +37,8 @@ elif [[ "$1" == "provider-medium" ]]; then
   java -jar \
        -Xms1536M \
        -Xmx1536M \
+       -Xloggc:/root/logs/gc.log \
+       -XX:+PrintGCDetails \
        -Dtype=provider \
        -Ddubbo.protocol.port=20880 \
        -Dserver.port=30000 \
@@ -46,6 +50,8 @@ elif [[ "$1" == "provider-large" ]]; then
   java -jar \
        -Xms2560M \
        -Xmx2560M \
+       -Xloggc:/root/logs/gc.log \
+       -XX:+PrintGCDetails \
        -Dtype=provider \
        -Ddubbo.protocol.port=20880 \
        -Dserver.port=30000 \
