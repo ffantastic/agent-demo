@@ -24,7 +24,7 @@ public class ConnecManager {
 
     private Logger logger = LoggerFactory.getLogger(ConnecManager.class);
 
-    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();//
+    private IRegistry registry = new LocalEtcdRegistry();//new EtcdRegistry(System.getProperty("etcd.url"));//
     private BackendConnection backendConnection;
     private RequestCache<UpstreamMetaInfo> upstreamRequestCache = new RequestCache<>();
 
@@ -67,7 +67,7 @@ public class ConnecManager {
         // logger.info("requestId=" + req.getId());
 
         Channel outboundChannel =  backendConnection.SelectChannel(inbound);
-        upstreamRequestCache.Cache(req.getId(),new UpstreamMetaInfo(request.getForwardStartTime(),inbound),inbound.channel().eventLoop() == outboundChannel.eventLoop());
+        upstreamRequestCache.Cache(req.getId(),new UpstreamMetaInfo(inbound),inbound.channel().eventLoop() == outboundChannel.eventLoop());
         outboundChannel.writeAndFlush(req);
     }
 
@@ -85,18 +85,22 @@ public class ConnecManager {
         }
 
         AgentRequest agent = AgentRequest.FromDubbo(response);
-        agent.setForwardStartTime(metaInfo.ForwardStartTime);
+       // agent.setForwardStartTime(metaInfo.ForwardStartTime);
         metaInfo.InboundChannel.writeAndFlush(agent);
     }
 
     public static class UpstreamMetaInfo{
-        Long ForwardStartTime;
+//        Long ForwardStartTime;
         ChannelHandlerContext InboundChannel;
 
-        public UpstreamMetaInfo(Long forwardStartTime,ChannelHandlerContext inboundChannel){
-            this.ForwardStartTime = forwardStartTime;
+        public UpstreamMetaInfo( ChannelHandlerContext inboundChannel){
             this.InboundChannel = inboundChannel;
         }
+
+//        public UpstreamMetaInfo(Long forwardStartTime,ChannelHandlerContext inboundChannel){
+//            this.ForwardStartTime = forwardStartTime;
+//            this.InboundChannel = inboundChannel;
+//        }
     }
 
 }

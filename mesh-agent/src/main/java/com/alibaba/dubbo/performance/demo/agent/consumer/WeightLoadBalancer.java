@@ -18,7 +18,7 @@ public class WeightLoadBalancer {
      */
 
     public WeightLoadBalancer(List<Endpoint> backends){
-        if(backends.size() != 3){
+        if(backends.size() != 1){
             throw new RuntimeException("endpoint size should be 3, actually :"+backends.size());
         }
 
@@ -40,7 +40,7 @@ public class WeightLoadBalancer {
     }
 
     public String GetHost(){
-        int num  = random.nextInt(10);
+        int num  = random.nextInt(1);
         if(num ==0 ){
             return _1;
         }else if(num <=3){

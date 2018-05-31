@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BackendManager {
     private Logger logger = LoggerFactory.getLogger(BackendManager.class);
 
-    private IRegistry registry =  new EtcdRegistry(System.getProperty("etcd.url"));//new LocalEtcdRegistry();//
+    private IRegistry registry =  new LocalEtcdRegistry();//new EtcdRegistry(System.getProperty("etcd.url"));//
 
     private Map<String, BackendConnection> backendConnectionMap = new HashMap<>();
 
@@ -72,7 +72,7 @@ public class BackendManager {
         AgentRequest agentRequest = AgentRequest.BuildFromHttp(request);
 
         Long nextId = idGen.incrementAndGet();
-        agentRequest.setForwardStartTime(System.currentTimeMillis());
+        //agentRequest.setForwardStartTime(System.currentTimeMillis());
         agentRequest.setRequestId(nextId);
 
         // select a backend
@@ -83,7 +83,7 @@ public class BackendManager {
         Channel outboundChannel = backend.SelectChannel(inboundChannel);
 
         // map next id to meta data about this forwarding, it is to be used for writing response back from backend
-        forwardRequestCache.Cache(nextId,new ForwardMetaInfo(backendHostName, inboundChannel),outboundChannel.eventLoop() == inboundChannel.channel().eventLoop() );
+        forwardRequestCache.Cache(nextId,new ForwardMetaInfo(inboundChannel),outboundChannel.eventLoop() == inboundChannel.channel().eventLoop() );
 
         outboundChannel.writeAndFlush(agentRequest);
 
@@ -104,13 +104,17 @@ public class BackendManager {
     }
 
     public static class ForwardMetaInfo {
-        public String forwardHost;
+        //public String forwardHost;
         public ChannelHandlerContext inboundChannel;
 
 
-        public ForwardMetaInfo(String host, ChannelHandlerContext channel) {
-            this.forwardHost = host;
+        public ForwardMetaInfo(ChannelHandlerContext channel) {
             this.inboundChannel = channel;
         }
+
+//        public ForwardMetaInfo(String host, ChannelHandlerContext channel) {
+//            this.forwardHost = host;
+//            this.inboundChannel = channel;
+//        }
     }
 }

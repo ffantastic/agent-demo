@@ -148,13 +148,13 @@ public class AgentRequest {
         }
     }
 
-    public long getForwardStartTime() {
-        return forwardStartTime;
-    }
-
-    public void setForwardStartTime(long forwardStartTime) {
-        this.forwardStartTime = forwardStartTime;
-    }
+//    public long getForwardStartTime() {
+//        return forwardStartTime;
+//    }
+//
+//    public void setForwardStartTime(long forwardStartTime) {
+//        this.forwardStartTime = forwardStartTime;
+//    }
 
     public long getRequestId() {
         return requestId;

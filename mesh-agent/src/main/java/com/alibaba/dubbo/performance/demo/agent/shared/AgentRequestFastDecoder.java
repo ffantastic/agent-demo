@@ -88,7 +88,7 @@ public class AgentRequestFastDecoder extends ByteToMessageDecoder {
         byteBuf.readerIndex(headerStarIndex+HEADER_LENGTH);
         InputStream in = new ByteBufInputStream(byteBuf, len );
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        agentRequest.setForwardStartTime(Long.parseLong(reader.readLine()));
+       // agentRequest.setForwardStartTime(Long.parseLong(reader.readLine()));
 
         if (agentRequest.IsRequest) {
             agentRequest.setP_interfaceCode(Integer.parseInt(reader.readLine()));

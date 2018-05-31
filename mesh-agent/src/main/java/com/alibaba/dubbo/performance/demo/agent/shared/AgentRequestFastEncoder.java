@@ -40,7 +40,7 @@ public class AgentRequestFastEncoder extends MessageToByteEncoder {
     public void encodeRequestData(OutputStream out, AgentRequest data) throws Exception {
 
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(out));
-        writer.println(data.getForwardStartTime());
+        //writer.println(data.getForwardStartTime());
         //writer.println(data.isKeepAlive());
 
         if(data.IsRequest){

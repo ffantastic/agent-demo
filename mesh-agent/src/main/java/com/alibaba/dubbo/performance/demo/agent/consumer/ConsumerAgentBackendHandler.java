@@ -33,9 +33,9 @@ public class ConsumerAgentBackendHandler extends SimpleChannelInboundHandler<Age
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, AgentRequest agentRequest) throws Exception {
-        long forwardEndTime = System.currentTimeMillis();
+      //  long forwardEndTime = System.currentTimeMillis();
         long requestId = agentRequest.getRequestId();
-        BackendManager.ForwardMetaInfo metaInfo = bm.FinishBackendForwarding(requestId,forwardEndTime-agentRequest.getForwardStartTime());
+        BackendManager.ForwardMetaInfo metaInfo = bm.FinishBackendForwarding(requestId,0);
         if(metaInfo != null){
             ChannelHandlerContext inboundChannel = metaInfo.inboundChannel;
             // System.out.println("result: "+agentRequest.getResult());

@@ -87,7 +87,7 @@ public class AgentRequestDecoder extends ByteToMessageDecoder {
 
         InputStream in = new ByteBufInputStream(byteBuf, len );
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        agentRequest.setForwardStartTime(Long.parseLong(reader.readLine()));
+        //agentRequest.setForwardStartTime(Long.parseLong(reader.readLine()));
         //agentRequest.setKeepAlive(Boolean.parseBoolean(reader.readLine()));
 
         if (agentRequest.IsRequest) {
