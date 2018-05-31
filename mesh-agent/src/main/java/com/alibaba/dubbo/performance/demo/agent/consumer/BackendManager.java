@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BackendManager {
     private Logger logger = LoggerFactory.getLogger(BackendManager.class);
 
-    private IRegistry registry =  new LocalEtcdRegistry();//new EtcdRegistry(System.getProperty("etcd.url"));//
+    private IRegistry registry = new EtcdRegistry(System.getProperty("etcd.url"));// new LocalEtcdRegistry();//
 
     private Map<String, BackendConnection> backendConnectionMap = new HashMap<>();
 
