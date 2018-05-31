@@ -8,6 +8,8 @@ import com.alibaba.dubbo.performance.demo.agent.dubbo.model.RpcInvocation;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -15,6 +17,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
 public class DubboRpcEncoder extends MessageToByteEncoder{
+    private Logger logger = LoggerFactory.getLogger(DubboRpcEncoder.class);
     // header length.
     protected static final int HEADER_LENGTH = 16;
     // magic header.
@@ -26,36 +29,40 @@ public class DubboRpcEncoder extends MessageToByteEncoder{
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf buffer) throws Exception {
-        Request req = (Request)msg;
+        try {
+            Request req = (Request) msg;
 
-        // header.
-        byte[] header = new byte[HEADER_LENGTH];
-        // set magic number.
-        Bytes.short2bytes(MAGIC, header);
+            // header.
+            byte[] header = new byte[HEADER_LENGTH];
+            // set magic number.
+            Bytes.short2bytes(MAGIC, header);
 
-        // set request and serialization flag.
-        header[2] = (byte) (FLAG_REQUEST | 6);
+            // set request and serialization flag.
+            header[2] = (byte) (FLAG_REQUEST | 6);
 
-        if (req.isTwoWay()) header[2] |= FLAG_TWOWAY;
-        if (req.isEvent()) header[2] |= FLAG_EVENT;
+            if (req.isTwoWay()) header[2] |= FLAG_TWOWAY;
+            if (req.isEvent()) header[2] |= FLAG_EVENT;
 
-        // set request id.
-        Bytes.long2bytes(req.getId(), header, 4);
+            // set request id.
+            Bytes.long2bytes(req.getId(), header, 4);
 
-        // encode request data.
-        int savedWriteIndex = buffer.writerIndex();
-        buffer.writerIndex(savedWriteIndex + HEADER_LENGTH);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        encodeRequestData(bos, req.getData());
+            // encode request data.
+            int savedWriteIndex = buffer.writerIndex();
+            buffer.writerIndex(savedWriteIndex + HEADER_LENGTH);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            encodeRequestData(bos, req.getData());
 
-        int len = bos.size();
-        buffer.writeBytes(bos.toByteArray());
-        Bytes.int2bytes(len, header, 12);
+            int len = bos.size();
+            buffer.writeBytes(bos.toByteArray());
+            Bytes.int2bytes(len, header, 12);
 
-        // write
-        buffer.writerIndex(savedWriteIndex);
-        buffer.writeBytes(header); // write header.
-        buffer.writerIndex(savedWriteIndex + HEADER_LENGTH + len);
+            // write
+            buffer.writerIndex(savedWriteIndex);
+            buffer.writeBytes(header); // write header.
+            buffer.writerIndex(savedWriteIndex + HEADER_LENGTH + len);
+        }catch (Throwable cause){
+            logger.error("exception caught in encoder ",cause);
+        }
     }
 
     public void encodeRequestData(OutputStream out, Object data) throws Exception {
