@@ -29,7 +29,7 @@ public class DubboRpcEncoder extends MessageToByteEncoder{
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf buffer) throws Exception {
-        try {
+//        try {
             Request req = (Request) msg;
 
             // header.
@@ -60,9 +60,9 @@ public class DubboRpcEncoder extends MessageToByteEncoder{
             buffer.writerIndex(savedWriteIndex);
             buffer.writeBytes(header); // write header.
             buffer.writerIndex(savedWriteIndex + HEADER_LENGTH + len);
-        }catch (Throwable cause){
-            logger.error("exception caught in encoder ",cause);
-        }
+//        }catch (Throwable cause){
+//            logger.error("exception caught in encoder ",cause);
+//        }
     }
 
     public void encodeRequestData(OutputStream out, Object data) throws Exception {
