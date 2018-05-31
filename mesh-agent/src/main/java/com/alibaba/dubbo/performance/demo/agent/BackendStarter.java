@@ -12,6 +12,7 @@ import java.util.Properties;
 public class BackendStarter implements CommandLineRunner {
     @Override
     public void run(String... strings) throws Exception {
+        System.out.println("Current Code Version: "+1);
         String type = System.getProperty("type");   // 获取type参数
         if ("consumer".equals(type)) {
             new ConsumerAgentServer().Start();

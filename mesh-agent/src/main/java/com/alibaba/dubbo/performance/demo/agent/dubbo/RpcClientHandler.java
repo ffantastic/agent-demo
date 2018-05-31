@@ -14,7 +14,7 @@ public class RpcClientHandler extends SimpleChannelInboundHandler<RpcResponse> {
 
     private Logger logger = LoggerFactory.getLogger(RpcClientHandler.class);
     private ConnecManager conncMgr;
-    
+
     public RpcClientHandler(ConnecManager conncMgr){
         this.conncMgr=conncMgr;
     }
