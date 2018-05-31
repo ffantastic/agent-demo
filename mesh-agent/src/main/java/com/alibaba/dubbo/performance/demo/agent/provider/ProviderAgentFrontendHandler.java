@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
            // logger.info("Provider agent receive request id : "+agentRequest.getRequestId());
 
             if(agentRequest.isDecodeFailed()){
-                logger.error("Decode failed, request id {}, will send response directly",agentRequest.getRequestId());
+                logger.error("Decode failed, request id {}, will send response 0 directly",agentRequest.getRequestId());
                 agentRequest.setResult(0);
                 agentRequest.IsRequest=false;
                 channelHandlerContext.writeAndFlush(agentRequest);
