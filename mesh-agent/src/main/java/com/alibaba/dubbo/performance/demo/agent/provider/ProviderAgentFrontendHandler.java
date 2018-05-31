@@ -27,15 +27,11 @@ import org.slf4j.LoggerFactory;
         @Override
         protected void channelRead0(ChannelHandlerContext channelHandlerContext, AgentRequest agentRequest) throws Exception {
            // logger.info("Provider agent receive request id : "+agentRequest.getRequestId());
-//            System.out.println("keepalive:"+agentRequest.isKeepAlive());
-//            System.out.println("IsRequest:"+agentRequest.IsRequest);
-//            System.out.println("parameter:"+agentRequest.getP_parameter());
-//            System.out.println("ForwardStartTime:"+agentRequest.getForwardStartTime());
-//            System.out.println("interface:"+agentRequest.getP_interface());
-//            System.out.println("method:"+agentRequest.getP_method());
-//            System.out.println("parameterTypesString:"+agentRequest.getP_parameterTypesString());
+
             if(agentRequest.isDecodeFailed()){
                 logger.error("Decode failed, request id {}, will send response directly",agentRequest.getRequestId());
+                agentRequest.setResult(0);
+                agentRequest.IsRequest=false;
                 channelHandlerContext.writeAndFlush(agentRequest);
             }else{
                 this.conncMgr.ForwardToProvider(agentRequest,channelHandlerContext);
