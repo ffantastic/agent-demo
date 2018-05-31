@@ -40,14 +40,14 @@ public class WeightLoadBalancer {
     }
 
     /**
-     * 1:3:6 * 1:2:3 = 8:19:33
+     * 0.5:1.5:2.5 + 1:2:3 = 1.5:3.5:5.5 = 3:7:11
      * @return
      */
     public String GetHost(){
-        int num  = random.nextInt(60);
-        if(num <=7 ){
+        int num  = random.nextInt(21);
+        if(num <=2 ){
             return _1;
-        }else if(num <=26){
+        }else if(num <=9){
             return _3;
         }else{
             return _6;
