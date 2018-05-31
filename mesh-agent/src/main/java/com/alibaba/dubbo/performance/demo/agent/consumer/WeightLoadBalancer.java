@@ -39,11 +39,15 @@ public class WeightLoadBalancer {
         return ep.getHost()+":"+ep.getPort();
     }
 
+    /**
+     * 1:3:6 * 1:2:3 = 8:19:33
+     * @return
+     */
     public String GetHost(){
-        int num  = random.nextInt(10);
-        if(num ==0 ){
+        int num  = random.nextInt(60);
+        if(num <=7 ){
             return _1;
-        }else if(num <=4){
+        }else if(num <=26){
             return _3;
         }else{
             return _6;
