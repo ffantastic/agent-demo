@@ -1,10 +1,7 @@
 package com.alibaba.dubbo.performance.demo.agent.provider;
 
 import com.alibaba.dubbo.performance.demo.agent.dubbo.ConnecManager;
-import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequestDecoder;
-import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequestEncoder;
-import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequestFastDecoder;
-import com.alibaba.dubbo.performance.demo.agent.shared.AgentRequestFastEncoder;
+import com.alibaba.dubbo.performance.demo.agent.shared.*;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -39,8 +36,8 @@ public class ProviderAgentServer {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new AgentRequestFastDecoder("provider"));
-                            ch.pipeline().addLast(new AgentRequestFastEncoder());
+                            ch.pipeline().addLast(new AgentRequestZeroCopyDecoder("provider"));
+                            ch.pipeline().addLast(new AgentRequestZeroCopyEncoder());
                             //TODO cache ProviderAgentFrontendHandler ?
                             ch.pipeline().addLast(new ProviderAgentFrontendHandler(connecManager));
                         }

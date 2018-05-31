@@ -4,6 +4,7 @@ import com.alibaba.dubbo.performance.demo.agent.dubbo.model.Bytes;
 import com.alibaba.dubbo.performance.demo.agent.dubbo.model.RpcResponse;
 import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.*;
@@ -33,7 +34,7 @@ public class AgentRequest {
         agentRequest.IsRequest = true;
 
         agentRequest.setHttpContent(request.content());
-        agentRequest.DecodeHttpContent();
+       // agentRequest.DecodeHttpContent();
 
         // TODO because there are 3 provider-agent but only 1 consumer-agent,
         // meaning that this 1 consumer-agent is easier to reach its cap bottleneck.
@@ -96,16 +97,6 @@ public class AgentRequest {
     public DefaultFullHttpResponse ConvertToHttp() {
         String resultString = String.valueOf(result);
         DefaultFullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.ACCEPTED, Unpooled.wrappedBuffer(resultString.getBytes()));
-//        ctx.writeAndFlush(response);
-//        ctx.close();
-
-//        if (!keepAlive) {
-//            ctx.write(response).addListener(ChannelFutureListener.CLOSE);
-//        } else {
-//            response.headers().set(CONNECTION, KEEP_ALIVE);
-//            ctx.write(response);
-//        }
-
         return response;
     }
 
