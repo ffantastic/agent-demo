@@ -4,6 +4,7 @@ import com.alibaba.dubbo.performance.demo.agent.dubbo.ConnecManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,7 @@ public class AgentRequestZeroCopyEncoder extends MessageToByteEncoder {
                 buffer.writeByte(0x0f);
                 buffer.writeInt(req.getHttpContent().readableBytes());
                 buffer.writeBytes(req.getHttpContent());
+                ReferenceCountUtil.release(req.getHttpContent());
             } else {
                 buffer.writeByte(0);
                 buffer.writeInt(4);
