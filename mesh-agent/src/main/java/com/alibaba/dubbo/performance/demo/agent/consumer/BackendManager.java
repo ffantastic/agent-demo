@@ -30,14 +30,10 @@ public class BackendManager {
 
     private RequestCache<ForwardMetaInfo> forwardRequestCache = new RequestCache<>();
 
-   // private LocalLoadBalancer loadBalancer;
-
     private WeightLoadBalancer loadBalancer;
 
     public void Init(EventLoopGroup eventloopGroup) throws Exception {
         logger.info("BackendManager initialization start.");
-
-       // this.loadBalancer = LocalLoadBalancer.GetInstance();
 
         List<Endpoint> endpoints = registry.find("com.alibaba.dubbo.performance.demo.provider.IHelloService");
         this.loadBalancer = new WeightLoadBalancer(endpoints);
@@ -81,7 +77,7 @@ public class BackendManager {
 
         // select a backend
         String backendHostName = this.loadBalancer.GetHost();//this.loadBalancer.GetHost();//
-
+        //System.out.println(backendHostName);
         //select a channel from a backend
         BackendConnection backend = backendConnectionMap.get(backendHostName);
         Channel outboundChannel = backend.SelectChannel(inboundChannel);

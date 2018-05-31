@@ -40,7 +40,7 @@ public class BackendConnection {
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline().addLast(
                                 new AgentRequestFastEncoder(),
-                                new AgentRequestDecoder("Consumer"),
+                                new AgentRequestFastDecoder("Consumer"),
                                 new ConsumerAgentBackendHandler(backendManager));
                     }
                 })

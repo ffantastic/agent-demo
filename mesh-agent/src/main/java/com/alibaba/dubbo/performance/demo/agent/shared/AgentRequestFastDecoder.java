@@ -19,11 +19,11 @@ public class AgentRequestFastDecoder extends ByteToMessageDecoder {
     String type ;
     public AgentRequestFastDecoder(String type){
         this.type=type;
-        System.out.println("AgentRequestDecoder"+type);
+        System.out.println("AgentRequestFastDecoder"+type);
     }
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) {
-       // System.out.println(type+" decode................");
+         //System.out.println(type+" decode................");
 
         try {
             do {
@@ -35,7 +35,7 @@ public class AgentRequestFastDecoder extends ByteToMessageDecoder {
                     e.printStackTrace();
                     throw new RuntimeException(e);
                 }
-                if (msg == AgentRequestFastDecoder.DecodeResult.NEED_MORE_INPUT) {
+                if (msg == AgentRequestDecoder.DecodeResult.NEED_MORE_INPUT) {
                     byteBuf.readerIndex(savedReaderIndex);
                     // System.out.println(type+" avail: "+byteBuf.readableBytes());
                     break;
@@ -61,52 +61,45 @@ public class AgentRequestFastDecoder extends ByteToMessageDecoder {
         int readable = byteBuf.readableBytes();
 
         if (readable < HEADER_LENGTH) {
-            return AgentRequestFastDecoder.DecodeResult.NEED_MORE_INPUT;
+            return AgentRequestDecoder.DecodeResult.NEED_MORE_INPUT;
         }
 
-        byte[] header = new byte[HEADER_LENGTH];
-        byteBuf.readBytes(header);
-
+        int headerStarIndex = byteBuf.readerIndex();
 //        byte[] magic = new byte[2];
 //        magic[0]=header[0];
 //        magic[1]=header[1];
 //        System.out.println("MAGIC NUMBER\t"+type+" : "+Bytes.byteArrayToHex(magic));
 
-        if(header[0] != (byte) 0xaf || header[1] != (byte)0x99){
-            System.out.println("!!!Wrong Magic!!!");
-        }
-
-        byte[] dataLen = Arrays.copyOfRange(header, 11, 15);
-        int len = Bytes.bytes2int(dataLen);
+        byteBuf.readerIndex(headerStarIndex+11);
+        int len  = byteBuf.readInt();
         int tt = len + HEADER_LENGTH;
         if (readable < tt) {
-            return AgentRequestFastDecoder.DecodeResult.NEED_MORE_INPUT;
+            return AgentRequestDecoder.DecodeResult.NEED_MORE_INPUT;
         }
 
-        int decodeEndIndex = byteBuf.readerIndex()+len;
-
         AgentRequest agentRequest = new AgentRequest();
-        if (header[10] == 0x0f) {
+        byteBuf.readerIndex(headerStarIndex+2);
+        agentRequest.setRequestId(byteBuf.readLong());
+        byte isRequestByte = byteBuf.readByte();
+        if (isRequestByte == 0x0f) {
             agentRequest.IsRequest = true;
         }
 
-        agentRequest.setRequestId(Bytes.bytes2long(header, 2));
-
-        agentRequest.setForwardStartTime(byteBuf.readLong());
+        byteBuf.readerIndex(headerStarIndex+HEADER_LENGTH);
+        InputStream in = new ByteBufInputStream(byteBuf, len );
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        agentRequest.setForwardStartTime(Long.parseLong(reader.readLine()));
 
         if (agentRequest.IsRequest) {
-            // slice-produced bytebuf doesn't need to be released.
-            byte[] bb = new byte[len-8];
-           byteBuf.readBytes(bb);
-            System.out.println(agentRequest.getRequestId() + ":"+Bytes.byteArrayToHex(bb));
-            //agentRequest.setHttpContent( byteBuf.slice(byteBuf.readerIndex(),len-8));
-            agentRequest.setHttpContent(Unpooled.wrappedBuffer(bb));
-            agentRequest.DecodeHttpContent();
-            byteBuf.readerIndex(decodeEndIndex);
+            agentRequest.setP_interfaceCode(Integer.parseInt(reader.readLine()));
+            agentRequest.setP_parameterTypesStringCode(Integer.parseInt(reader.readLine()));
+            agentRequest.setP_parameter(reader.readLine());
+            agentRequest.setP_methodCode(Integer.parseInt(reader.readLine()));
         } else {
-            agentRequest.setResult(byteBuf.readInt());
+            agentRequest.setResult(Integer.parseInt(reader.readLine()));
         }
 
+        in.close();
         return agentRequest;
     }
 }
