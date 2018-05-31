@@ -27,7 +27,7 @@ public class WeightLoadBalancer {
                 _1 = MakeKey(ep);
             }else if(ep.getWeight() == 3){
                 _3 = MakeKey(ep);
-            }else if(ep.getWeight() == 4 ){
+            }else if(ep.getWeight() == 6 ){
                 _6= MakeKey(ep);
             }else{
                 throw new RuntimeException("Unknown weight "+ep.getWeight()+" :"+ep);
