@@ -28,6 +28,7 @@ public class AgentRequest {
     private int p_methodCode;
     private int result;
     private ByteBuf httpContent;
+    private boolean isDecodeFailed;
 
     public static AgentRequest BuildFromHttp(FullHttpRequest request) {
         AgentRequest agentRequest = new AgentRequest();
@@ -111,13 +112,13 @@ public class AgentRequest {
                 if (Special_Interface.equals(kv[1])) {
                     this.setP_interfaceCode(0x01);
                 } else {
-                    throw new RuntimeException("you are a bad boy: " + kv[1]);
+                    this.setDecodeFailed(true);
                 }
             } else if ("parameterTypesString".equals(kv[0])) {
                 if (Special_parameterType.equals(kv[1])) {
                     this.setP_parameterTypesStringCode(0x01);
                 } else {
-                    throw new RuntimeException("you are a bad boy: " + kv[1]);
+                    this.setDecodeFailed(true);
                 }
             } else if ("parameter".equals(kv[0])) {
                 if (kv.length == 2) {
@@ -131,10 +132,10 @@ public class AgentRequest {
                 if (Special_Method.equals(kv[1])) {
                     this.setP_methodCode(0x01);
                 } else {
-                    throw new RuntimeException("you are a bad boy: " + kv[1]);
+                    this.setDecodeFailed(true);
                 }
             } else {
-                throw new RuntimeException(this.requestId+" AgentRequest conversion from HttpRequest is failed, unknown parameter: " + kv[0]);
+                this.setDecodeFailed(true);
             }
         }
     }
@@ -202,5 +203,13 @@ public class AgentRequest {
 
     public void setHttpContent(ByteBuf httpContent) {
         this.httpContent = httpContent;
+    }
+
+    public boolean isDecodeFailed() {
+        return isDecodeFailed;
+    }
+
+    public void setDecodeFailed(boolean decodeFailed) {
+        isDecodeFailed = decodeFailed;
     }
 }

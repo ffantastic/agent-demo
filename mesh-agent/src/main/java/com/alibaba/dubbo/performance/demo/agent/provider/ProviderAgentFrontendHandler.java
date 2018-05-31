@@ -34,14 +34,18 @@ import org.slf4j.LoggerFactory;
 //            System.out.println("interface:"+agentRequest.getP_interface());
 //            System.out.println("method:"+agentRequest.getP_method());
 //            System.out.println("parameterTypesString:"+agentRequest.getP_parameterTypesString());
-
-            this.conncMgr.ForwardToProvider(agentRequest,channelHandlerContext);
+            if(agentRequest.isDecodeFailed()){
+                logger.error("Decode failed, request id {}, will send response directly",agentRequest.getRequestId());
+                channelHandlerContext.writeAndFlush(agentRequest);
+            }else{
+                this.conncMgr.ForwardToProvider(agentRequest,channelHandlerContext);
+            }
         }
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
             cause.printStackTrace();
-            logger.error("exception caught in provider frontend handler");
+            logger.error("exception caught in provider frontend handler",cause);
         }
     }
 
