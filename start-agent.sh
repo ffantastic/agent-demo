@@ -14,7 +14,7 @@ if [[ "$1" == "consumer" ]]; then
        -Xms1536M \
        -Xmx1536M \
        -Xloggc:/root/logs/gc.log \
-       -XX:+PrintGCDetails \
+       -Dio.netty.leakDetection.level=advanced \
        -Dtype=consumer \
        -Dserver.port=20000 \
        -Detcd.url=$ETCD_URL \
@@ -26,6 +26,7 @@ elif [[ "$1" == "provider-small" ]]; then
        -Xms512M \
        -Xmx512M \
        -Xloggc:/root/logs/gc.log \
+        -Dio.netty.leakDetection.level=advanced \
        -Dtype=provider \
        -Dweight=1 \
        -Ddubbo.protocol.port=20880 \
@@ -39,6 +40,7 @@ elif [[ "$1" == "provider-medium" ]]; then
        -Xms1536M \
        -Xmx1536M \
        -Xloggc:/root/logs/gc.log \
+       -Dio.netty.leakDetection.level=advanced \
        -Dtype=provider \
        -Dweight=3 \
        -Ddubbo.protocol.port=20880 \
@@ -52,6 +54,7 @@ elif [[ "$1" == "provider-large" ]]; then
        -Xms2560M \
        -Xmx2560M \
        -Xloggc:/root/logs/gc.log \
+       -Dio.netty.leakDetection.level=advanced \
        -Dtype=provider \
        -Dweight=6 \
        -Ddubbo.protocol.port=20880 \

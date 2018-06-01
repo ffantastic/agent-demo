@@ -31,24 +31,30 @@ public class ConsumerAgentFrontendHandler extends SimpleChannelInboundHandler<Ob
         assert  this.bm != null;
     }
 
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        FullHttpRequest req = (FullHttpRequest)msg;
-        long requestId =  bm.ForwardToBackend(req,ctx);
-        //logger.info("Inbound request [id: {}] is forwarded.",requestId);
-    }
-
-    @Override
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
-
-    }
-
+//    /**
+//     * use channelRead may lead to bytebuffer leak. We only want to keep http content part in the whole allocated bytebuf.
+//     * @param ctx
+//     * @param msg
+//     * @throws Exception
+//     */
 //    @Override
-//    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+//    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 //        FullHttpRequest req = (FullHttpRequest)msg;
 //        long requestId =  bm.ForwardToBackend(req,ctx);
-//         //logger.info("Inbound request [id: {}] is forwarded.",requestId);
+//        //logger.info("Inbound request [id: {}] is forwarded.",requestId);
 //    }
+//
+//    @Override
+//    protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
+//
+//    }
+
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+        FullHttpRequest req = (FullHttpRequest)msg;
+        long requestId =  bm.ForwardToBackend(req,ctx);
+         //logger.info("Inbound request [id: {}] is forwarded.",requestId);
+    }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {

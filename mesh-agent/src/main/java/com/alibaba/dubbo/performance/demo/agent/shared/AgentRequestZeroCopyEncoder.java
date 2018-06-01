@@ -19,7 +19,7 @@ public class AgentRequestZeroCopyEncoder extends MessageToByteEncoder {
     protected static final short MAGIC = (short) 0xaf99;
     @Override
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf buffer) throws Exception {
-//        try {
+        try {
             //System.out.println("encode................");
             AgentRequest req = (AgentRequest) msg;
 
@@ -35,8 +35,8 @@ public class AgentRequestZeroCopyEncoder extends MessageToByteEncoder {
                 buffer.writeInt(4);
                 buffer.writeInt(req.getResult());
             }
-//        }catch (Throwable cause){
-//            logger.error("Exception caught in Encoder ",cause);
-//        }
+        }catch (Throwable cause){
+            logger.error("Exception caught in Encoder ",cause);
+        }
     }
 }

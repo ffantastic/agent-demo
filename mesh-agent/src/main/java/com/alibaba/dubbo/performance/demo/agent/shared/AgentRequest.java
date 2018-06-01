@@ -35,7 +35,8 @@ public class AgentRequest {
         agentRequest.IsRequest = true;
 
         agentRequest.setHttpContent(request.content());
-       // agentRequest.DecodeHttpContent();
+        // for derived bytebuf passed to other component, there is a need to call retain() to increase refCnt
+        agentRequest.getHttpContent().retain();
 
         // TODO because there are 3 provider-agent but only 1 consumer-agent,
         // meaning that this 1 consumer-agent is easier to reach its cap bottleneck.
@@ -47,7 +48,6 @@ public class AgentRequest {
 //            System.out.println(entry.getKey() + ";" + entry.getValue());
 //        }
 //        System.out.println("content:");
-
 
         //System.out.println("send agent request , parameter: "+agentRequest.getP_parameter()+", hashcode "+agentRequest.getP_parameter().hashCode());
 
