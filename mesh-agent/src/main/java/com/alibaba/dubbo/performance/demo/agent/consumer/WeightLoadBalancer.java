@@ -47,7 +47,7 @@ public class WeightLoadBalancer {
         int num  = random.nextInt(21);
         if(num <=2 ){
             return _1;
-        }else if(num <=9){
+        }else if(num <=10){
             return _3;
         }else{
             return _6;
