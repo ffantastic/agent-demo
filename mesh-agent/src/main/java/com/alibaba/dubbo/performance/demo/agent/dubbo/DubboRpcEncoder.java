@@ -29,40 +29,37 @@ public class DubboRpcEncoder extends MessageToByteEncoder{
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf buffer) throws Exception {
-//        try {
+        try {
             Request req = (Request) msg;
 
-            // header.
-            byte[] header = new byte[HEADER_LENGTH];
             // set magic number.
-            Bytes.short2bytes(MAGIC, header);
-
+            buffer.writeShort(MAGIC);
             // set request and serialization flag.
-            header[2] = (byte) (FLAG_REQUEST | 6);
+            byte flag = (byte) (FLAG_REQUEST | 6);
 
-            if (req.isTwoWay()) header[2] |= FLAG_TWOWAY;
-            if (req.isEvent()) header[2] |= FLAG_EVENT;
+            if (req.isTwoWay()) flag |= FLAG_TWOWAY;
+            if (req.isEvent()) flag |= FLAG_EVENT;
+
+            buffer.writeByte(flag);
+
+            // skip a byte
+            buffer.writeByte(0);
 
             // set request id.
-            Bytes.long2bytes(req.getId(), header, 4);
+            buffer.writeLong(req.getId());
 
             // encode request data.
-            int savedWriteIndex = buffer.writerIndex();
-            buffer.writerIndex(savedWriteIndex + HEADER_LENGTH);
+            //int lenStartIndex = buffer.writerIndex();
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             encodeRequestData(bos, req.getData());
 
             int len = bos.size();
+            buffer.writeInt(len);
             buffer.writeBytes(bos.toByteArray());
-            Bytes.int2bytes(len, header, 12);
 
-            // write
-            buffer.writerIndex(savedWriteIndex);
-            buffer.writeBytes(header); // write header.
-            buffer.writerIndex(savedWriteIndex + HEADER_LENGTH + len);
-//        }catch (Throwable cause){
-//            logger.error("exception caught in encoder ",cause);
-//        }
+        }catch (Throwable cause){
+            logger.error("exception caught in encoder ",cause);
+        }
     }
 
     public void encodeRequestData(OutputStream out, Object data) throws Exception {
