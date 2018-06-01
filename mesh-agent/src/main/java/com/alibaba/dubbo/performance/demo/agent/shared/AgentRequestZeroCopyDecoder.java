@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.util.ReferenceCountUtil;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -87,6 +88,9 @@ public class AgentRequestZeroCopyDecoder extends ByteToMessageDecoder {
         if (agentRequest.IsRequest) {
             agentRequest.setHttpContent(byteBuf.readBytes(len));
             agentRequest.DecodeHttpContent();
+            // bytebuf from readBytes() or copy() are not derived bytebuf, need to be released
+            // http://netty.io/wiki/reference-counted-objects.html
+            ReferenceCountUtil.release(agentRequest.getHttpContent());
         } else {
             agentRequest.setResult(byteBuf.readInt());
         }
