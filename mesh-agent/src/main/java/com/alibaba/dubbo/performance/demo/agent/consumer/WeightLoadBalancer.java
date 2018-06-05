@@ -45,9 +45,9 @@ public class WeightLoadBalancer {
      */
     public String GetHost(){
         int num  = random.nextInt(21);
-        if(num <=2 ){
+        if(num <=3 ){
             return _1;
-        }else if(num <=10){
+        }else if(num <=11){
             return _3;
         }else{
             return _6;

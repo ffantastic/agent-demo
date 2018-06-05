@@ -84,7 +84,16 @@ public class ConnecManager {
             return;
         }
 
-        AgentRequest agent = AgentRequest.FromDubbo(response);
+        AgentRequest agent = null;
+        try {
+            agent = AgentRequest.FromDubbo(response);
+        }catch (NumberFormatException ex){
+            logger.error("provider is exhausted, request id: {}, write null response" , requestId);
+            agent =  new AgentRequest();
+            agent.IsRequest = false;
+            agent.setRequestId(requestId);
+        }
+
        // agent.setForwardStartTime(metaInfo.ForwardStartTime);
         metaInfo.InboundChannel.writeAndFlush(agent);
     }
