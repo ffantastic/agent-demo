@@ -43,7 +43,7 @@ public class BackendManager {
             logger.info("BackendManager found and add host: " + endpointStr);
             // this.loadBalancer.UpdateTTR(endpointStr, 0);
             // for each provider agent, there are 4 tcp long connections with it.
-            BackendConnection backendConnection = new BackendConnection(ep.getHost(), ep.getPort(), 16);
+            BackendConnection backendConnection = new BackendConnection(ep.getHost(), ep.getPort(), 32);
             backendConnection.Init(eventloopGroup,this);
             backendConnectionMap.put(endpointStr, backendConnection);
         }
